@@ -1,0 +1,14 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<br>
+<form id="deletecard" class="container" method="post" action="/deletecard">
+    <div class="col-md-2">
+        <label for="cardName" class="form-label">Card Name</label>
+        <input class="form-control" list="cardNameList" name="cardName" id="cardName" placeholder="Seach Name" autocomplete="off">
+    </div>
+    <div class="col-12">
+        <button class="btn btn-custom" type="submit">Delete</button>
+    </div>
+</form>
+{% endblock %}

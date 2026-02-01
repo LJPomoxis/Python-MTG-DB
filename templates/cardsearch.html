@@ -1,0 +1,74 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+    <div class="container-fluid side-padding top-padding" style="max-width: 1600px; margin: 0 auto;">
+        <div class="row mb-4 align-items-center" style="padding-top: 2%;">
+            <div class="col-md-6">
+                <p class="search-context-text">
+                    <span class="results-count-badge">{{ results.num }}</span>
+                    Results for <span class="fw-bold">"{{ results.query }}"</span>
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm">Sort: Name</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm">Filter: All</button>
+                </div>
+            </div>
+        </div>
+        <hr class="mb-4" style="opacity: 0.1;">
+        {% if cards %}
+            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-8 g-3">
+                {% for card in cards %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0">
+                            <a href="{{ url_for('card_details', cardID=card.ID, setID=card.setID) }}" class="d-block h-100">
+                                {% if card.local %}
+                                    <img src="{{url_for('static', filename=card.imageUrl)}}" 
+                                    class="mtg-card-img w-100 h-100" 
+                                    style="object-fit: contain;" 
+                                    alt="{{ card.name }}">
+                                {% else %}
+                                    <img src="{{card.imageUrl}}" 
+                                     class="mtg-card-img w-100 h-100" 
+                                     style="object-fit: contain;" 
+                                     alt="{{ card.name }}">
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <hr class="mb-4" style="opacity: 0.1;">
+            <div class="row" style="padding-left: 15%; padding-right: 15%;">
+                <div class="content-box text-center transparent-content-box">
+                    <p class="text-muted text-high-fantasy">{{ results.flavor }}</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="row">
+                <div class="col-12 py-5 mt-5 content-box text-center">
+                    <h1 class="text-muted">No Cards Found</h1>
+                    <p>Try broadening your search or check your spelling.</p>
+                    <a href="/scryfalladdcard" class="btn btn-custom">Add Card</a>
+                </div>
+            </div>
+        {% endif %}
+        <nav aria-label="Search results pages">
+            <ul class="pagination justify-content-center">
+              <li class="page-item {{ 'disabled' if page.current <= 1 }}">
+                <a class="page-link" href="{{ url_for('search', cardSearch=results.query, page=page.current-1) }}">Previous</a>
+              </li>
+              {% for p in range(1, page.total + 1) %}
+                <li class="page-item {{ 'active' if p == page.current }}">
+                  <a class="page-link" href="{{ url_for('search', cardSearch=results.query, page=p) }}">{{ p }}</a>
+                </li>
+              {% endfor %}
+              <li class="page-item {{ 'disabled' if page.current >= page.total }}">
+                <a class="page-link" href="{{ url_for('search', cardSearch=results.query, page=page.current+1) }}">Next</a>
+              </li>
+
+            </ul>
+        </nav>
+    </div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "deckbuildernavbar.html" %}
+
+{% block content %}
+
+<div class ="container-fluid p-5 title-section text-center">
+    <h1 class="transparent-content-box title-shadow text-fantasy">DECK BUILDER</h1>
+</div>
+
+<div class="container mt-5 main-content">
+    {% if decks %}
+        {% for deck in decks %}
+        <div class="row content-box transparent-content-box">
+            <a href="{{ url_for('deck_details', deckID=deck.ID) }}" class="d-block h-100">
+                {% if deck.faceImageLocal %}
+                    <img src="{{url_for('static', filename=deck.faceImageName)}}" 
+                    class="mtg-card-img w-100 h-100" 
+                    style="object-fit: contain;" 
+                    alt="{{ deck.faceImageName }}">
+                {% else %}
+                    <img src="{{deck.faceImageUrl}}" 
+                    class="mtg-card-img w-100 h-100" 
+                    style="object-fit: contain;" 
+                    alt="{{ deck.faceImageName }}">
+                {% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<div class ="container-fluid p-5 title-section text-center">
+    <h1 class="transparent-content-box title-shadow text-fantasy">MTG DB</h1>
+    <p class="text-dark">Connection made at: {{ server.serverTime }}</p>
+    <hr>
+    <form class="content-box dark-content-box small-padding d-flex" method="GET" action="/search">
+      <input name="cardSearch" class="form-control me-1" type="text" placeholder="Search cards" autocomplete="off" autofocus>
+      <button class="btn btn-custom" type="submit">Search</button>
+    </form>
+    <hr>
+    <div class="content-box transparent-content-box small-padding d-flex flex-column">
+      <p class="text-white text-high-fantasy">{{ server.flavor | safe}}</p>
+    </div>
+</div>
+
+<div class="container mt-5 main-content">
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="content-box">
+        <h3 style="text-align: center;">Cards in Collection</h3>
+        <p style="text-align: center;">{{server.collectionTotal}}</p>
+      </div>
+      <div class="content-box">
+        <h3 style="text-align: center;">Unique Cards in Collection</h3>
+        <p style="text-align: center;">{{server.numberUnique}}</p>
+      </div>
+    </div>
+
+    <div class="col-sm-4">
+      <div class="content-box d-flex flex-column">
+        <h3 style="text-align: center;">Random Card</h3>
+        <div class="card shadow-sm border-0 flex-grow-1">
+          <a href="{{ url_for('card_details', cardID=server.ID, setID=server.setID) }}" class="d-block h-100">
+            {% if server.image.local %}
+              <img src="{{url_for('static', filename=server.image.url)}}"
+              class="mtg-card-img" 
+              alt="{{ server.cardName }}">
+            {% else %}
+              <img src="{{server.image.url}}"
+              class="mtg-card-img"  
+              alt="{{ server.cardName }}">
+            {% endif %}
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="content-box">
+        <h3 style="text-align: center;">Delete Card</h3>
+        <a href="/deletecard" class="btn btn-custom">Delete card</a>
+      </div>
+      <div class="content-box">
+        <h3 style="text-align: center;">Add to collection</h3>
+        <a href="/scryfalladdcard" class="btn btn-custom">Add card</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

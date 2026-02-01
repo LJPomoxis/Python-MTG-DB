@@ -1,0 +1,29 @@
+{% extends "deckbuildernavbar.html" %}
+
+{% block content %}
+
+    {% if errors %}
+    <div class="content-box transparent-content-box">
+        {% for error in errors %}
+        <p class="text-muted">{{error}}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="content-box transparent-content-box">
+        <form class="content-box" method="post">
+            <div class="col">
+                <div class="content-box transparent-content-box">
+                    <label class="form-label" for="deckList">Deck List Input</label>
+                    <textarea class="form-control" name="deckList" id="deckList"></textarea>
+                </div>
+            </div>
+            <div class="col">
+                <div class="content-box transparent-content-box">
+                    <button class="btn btn-custom" type="submit">Add Deck</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}

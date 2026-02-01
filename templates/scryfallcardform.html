@@ -1,0 +1,64 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<form id="scryfallCardForm" class="content-box grid-layout grid-4" method="post" action="/scryfalladdcard">
+    <div>
+        <label for="cardName" class="form-label text-fantasy">Card Name</label>
+        <input name="cardName" id="cardName" class="form-control" type="text" placeholder="Card Name" autocomplete="off" autofocus>
+    </div>
+    <div>
+        <label for="cardSetCode" class="form-label text-fantasy">Card Set Code</label>
+        <input class="form-control" list="setCodeList" name="cardSetCode" id="cardSetCode" placeholder="Seach Set Codes" autocomplete="off">
+        <datalist name="cardSet" id="setCodeList">
+            {% for setCode in setCodes %}
+                <option value="{{ setCode }}">
+            {% endfor %}
+        </datalist>
+    </div>
+    <div>
+        <label for="cardQuantity" class="form-label text-fantasy">Card Quantity</label>
+        <input name="cardQuantity" id="cardQuantity" class="form-control" type="number" placeholder="Card Quantity" value="1">
+    </div>
+    <div>
+        <button class="btn btn-custom" type="submit">Submit</button>
+    </div>
+</form>
+
+{% if check == 1 %}
+    {% for card in results %}
+        <div class="content-box grid-layout grid-4" style="align-items: start;">
+            <div class="card shadow-sm border-0 flex-grow-1">
+                <a href="{{ url_for('card_details', cardID=card.ID, setID=card.setID) }}" class="d-block h-100">
+                    <img src="{{card.imageUrl}}" class="mtg-card-img" alt="{{card.imageUrl}}">
+                </a>
+            </div>
+            <div class="content-box transparent-content-box">
+                <h3 class="text-muted" style="padding-bottom: 3%;">Mana Value: {{ card.manaValue }}</h3>
+                <h3 class="text-muted" style="padding-bottom: 3%;">Card Color: {{ card.color }}</h3>
+                <h3 class="text-muted">Color Identity: {{ card.colorIdentity }}</h3>
+            </div>
+            <div class="content-box transparent-content-box">
+                <h3 class="text-muted">Types: {{ card.types }}</h3>
+            </div>
+            <div class="content-box transparent-content-box">
+                <h3 class="text-muted">Keywords: {{ card.keywords }}</h3>
+            </div>
+            <div class="content-box transparent-content-box">
+                <h3 class="text-muted">Oracle: {{ card.oracle }}</h3>
+            </div>
+            <div class="content-box transparent-content-box">
+                <h3 class="text-muted">Flavor: {{ card.flavor }}</h3>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if check == 2 %}
+<div class="container-fluid side-padding top-padding">
+    <div class="col">
+        <h3 class="text-warning">{{ results }}</h3>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

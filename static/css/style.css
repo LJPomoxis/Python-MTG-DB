@@ -1,0 +1,239 @@
+:root {
+    /* Color Palette - Deep Slate & Royal Blue */
+    --nav-bg: #0f172a;
+    --nav-text: #f8f9fa;
+    --nav-hover: #60a5fa;
+    
+    --banner-bg: #1e293b;
+    --body-bg: #f8fafc;
+    
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+
+    --brand-primary: #2563eb;
+    --btn-hover: #1d4ed8;
+    
+    /* MTG Card Specifics */
+    --mtg-radius: 4.75% / 3.5%;
+}
+
+body {
+    background-color: var(--body-bg);
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text-main);
+}
+
+textarea {
+  field-sizing: content;
+  min-height: 4rem; /* Optional: Prevents it from being just one line */
+  width: 100%; /* Ensure container handles width */
+}   
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* --- Navigation & Header --- */
+.navbar.bg-custom {
+    background-color: var(--nav-bg) !important;
+    border-bottom: 2px solid var(--brand-primary);
+}
+
+/* --- Navigation: Brand & Link Hover Effects --- */
+.navbar-brand {
+    color: var(--nav-text) !important;
+    font-weight: 700;
+    transition: transform 0.2s ease, color 0.2s ease;
+    display: inline-block;
+}
+
+.navbar-brand:hover {
+    color: var(--nav-hover) !important;
+    transform: translateY(-2px); /* Restored the lift */
+}
+
+.navbar.bg-custom .nav-link {
+    color: var(--nav-text) !important;
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.navbar.bg-custom .nav-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle background highlight */
+    transform: translateY(-2px); /* Restored the lift */
+}
+
+.navbar .form-control {
+    background-color: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 0;
+    color: white !important;
+    box-shadow: none !important;
+}
+
+.navbar .form-control:focus {
+    border-bottom: 1px solid var(--nav-hover) !important;
+}
+
+.navbar .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar .form-control:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--nav-hover);
+    box-shadow: 0 0 0 0.25rem rgba(96, 165, 250, 0.25);
+    outline: none;
+}
+
+/* --- Specific Search Button adjustment --- */
+.navbar .btn-custom {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+}
+
+.title-section {
+    background: linear-gradient(180deg, var(--nav-bg) 0%, var(--banner-bg) 100%);
+    padding: 4rem 1rem;
+    color: white;
+}
+
+.title-shadow {
+    color: #ffffff;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    font-size: 4.5rem;
+}
+
+/* --- Content Containers --- */
+.content-box {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    /* Allow space for the hover 'lift' without clipping */
+    display: flex;
+    flex-direction: column;
+    overflow: visible; 
+}
+
+.dark-content-box {
+    background: #0f172a;
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: .5rem;
+    width: 100%;
+    max-width: 700px; /* Keeps the search bar from getting too wide */
+    margin: 0 auto;
+}
+
+.dark-content-box.remove-radius {
+    border-radius: 0px !important;
+}
+
+.dark-content-box.dark-edges {
+    border-radius: 0px !important;
+    border-bottom: 2px solid var(--nav-bg);
+    border-top: 2px solid var(--nav-bg);
+}
+
+.transparent-content-box {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.content-box.grid-layout {
+    display: grid !important;
+    gap: 1.5rem;
+    align-items: end; /* Keeps your buttons aligned with inputs */
+}
+
+.content-box.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.content-box.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.content-box.grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.content-box.grid-layout input {
+    width: 100%;
+    box-sizing: border-box; 
+}
+
+.content-box.grid-layout > div {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Specific fix for the Random Card box in index.html */
+.content-box .card {
+    background: transparent !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible; /* Allows the shadow and lift to show */
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+/* --- The Card Image Scaling --- */
+.mtg-card-img {
+    border-radius: var(--mtg-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    /* Constraint: Ensures it never exceeds the box height */
+    max-width: 100%;
+    max-height: 380px; 
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+/* Scryfall Hover: Only triggers if there is room */
+.card:hover .mtg-card-img {
+    transform: translateY(-10px); /* Reduced lift to stay in bounds */
+    box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+    /* z-index: 10; */
+}
+
+.card.h-100 {
+    background: transparent !important; /* Removes Bootstrap's white card back */
+}
+
+/* --- Buttons --- */
+.btn-custom {
+    background-color: var(--brand-primary);
+    color: white !important;
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-custom:hover {
+    background-color: var(--btn-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-custom:focus {
+    background-color: var(--nav-bg);
+}
+
+/* --- Typography --- */
+.text-fantasy { font-family: 'Cinzel', serif; }
+.text-high-fantasy { font-family: 'Cinzel Decorative', serif; }

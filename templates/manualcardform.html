@@ -1,0 +1,128 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<br>
+<form id="manualCardForm" class="container" method="post" action="/manualaddcard"> <!-- method="POST" -->
+    <div class="row mb-3 align-items-center">
+
+        <div class="col-md-5">
+            <label for="cardName" class="form-label">Card Name</label>
+            <input name="cardName" id="cardName" class="form-control" type="text" placeholder="Card Name" autocomplete="off">
+        </div>
+
+        <div class="col-md-2">
+            <label for="manaValue" class="form-label">Mana Value</label>
+            <input name="manaValue" id="manaValue" class="form-control" type="number" placeholder="Value" min="0" value="0">
+        </div>
+
+        <div class="col-md-2">
+            <label for="hasX" class="btn btn-outline-primary d-block text-center">Has X in Cost?</label>
+            <input name="hasX" id="hasX" class="btn-check" type="checkbox" value="true">
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label d-block text-center">Card Color</label>
+            <div class="d-flex gap-3 justify-content-around">
+
+                <div class="form-check form-check-inline">
+                    <label for="white" class="form-check-label d-block text-center">W</label>
+                    <input name="colorBox" id="white" class="form-check-input form-check-input-lg" type="checkbox" value="W">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="blue" class="form-check-label d-block text-center">U</label>
+                    <input name="colorBox" id="blue" class="form-check-input form-check-input-lg" type="checkbox" value="U">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="black" class="form-check-label d-block text-center">B</label>
+                    <input name="colorBox" id="black" class="form-check-input form-check-input-lg" type="checkbox" value="B">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="red" class="form-check-label d-block text-center">R</label>
+                    <input name="colorBox" id="red" class="form-check-input form-check-input-lg" type="checkbox" value="R">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="green" class="form-check-label d-block text-center">G</label>
+                    <input name="colorBox" id="green" class="form-check-input form-check-input-lg" type="checkbox" value="G">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label d-block text-center">Card Color Identity</label>
+            <div class="d-flex gap-3 justify-content-around">
+                
+                <div class="form-check form-check-inline">
+                    <label for="whiteID" class="form-check-label d-block text-center">W</label>
+                    <input name="colorIDBox" id="whiteID" class="form-check-input form-check-input-lg" type="checkbox" value="W">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="blueID" class="form-check-label d-block text-center">U</label>
+                    <input name="colorIDBox" id="blueID" class="form-check-input form-check-input-lg" type="checkbox" value="U">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="blackID" class="form-check-label d-block text-center">B</label>
+                    <input name="colorIDBox" id="blackID" class="form-check-input form-check-input-lg" type="checkbox" value="B">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="redID" class="form-check-label d-block text-center">R</label>
+                    <input name="colorIDBox" id="redID" class="form-check-input form-check-input-lg" type="checkbox" value="R">
+                </div>
+                <div class="form-check form-check-inline">
+                    <label for="greenID" class="form-check-label d-block text-center">G</label>
+                    <input name="colorIDBox" id="greenID" class="form-check-input form-check-input-lg" type="checkbox" value="G">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-10">
+            <label for="tagInput" class="form-label">Card Types</label>
+            <div class="tag-input-container form-control">
+                <span id="tags-area" class="d-inline-flex flex-wrap align-items-center">
+                    </span>
+                <input type="text" class="tag-input border-0 p-0 me-2" style="outline: none;" id="tagInput" placeholder="Press Enter to Add Type" autocomplete="off">
+            </div>
+            <input type="hidden" name="entries" id="hiddenEntries">
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-10">
+            <label for="oracle" class="form-label">Card Text</label>
+            <input name="oracle" id="oracle" class="form-control" type="text" placeholder="Card Text" autocomplete="off">
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-5">
+            <label for="flavor" class="form-label">Card Flavor Text</label>
+            <input name="flavor" id="flavor" class="form-control" type="text" placeholder="Card Flavor Text" autocomplete="off">
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-2">
+            <label for="cardSetCode" class="form-label">Card Set Code</label>
+            <input class="form-control" list="setCodeList" name="cardSetCode" id="cardSetCode" placeholder="Seach Set Codes" autocomplete="off">
+            <datalist name="cardSet" id="setCodeList">
+                {% for setCode in setCodes %}
+                    <option value="{{ setCode }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="col-md-2">
+            <label for="quantity" class="form-label">Card Quantity</label>
+            <input name="quantity" id="quantity" class="form-control" type="number" placeholder="Card Quantity">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <button class="btn btn-custom" type="submit">Submit</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

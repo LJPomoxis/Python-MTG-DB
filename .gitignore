@@ -1,0 +1,26 @@
+# Ignore compiled python, unecessary clutter
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Ignore scripts directory and shell scripts, personal scripts for db
+scripts/
+*.sh
+
+# Ignore virtual environment, unecessary clutter
+venv/
+.venv/
+
+# Ignore env files, sensitive credentials
+*.env
+
+# Ignore log and jpg files, unecessary clutter
+*.log
+*.jpg
+
+# Ignore code-workspace and socket files, unecessary
+*.code-workspace
+*.sock
+
+# Revisit, unused in current implementation
+tags.js

@@ -1,0 +1,53 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<br>
+<div>
+    <label for="name">Card Name</label>
+    <h1 class="align-items-center" id="name">{{ card.cardName }}</h1>
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-5">
+            <label for="color">Color</label>
+            <h3 id="color">{{ card.color }}</h3>
+        </div>
+
+        <div class="col-md-5">
+            <label for="colorID">Color Identity</label>
+            <h3 id="colorID">{{ card.colorID }}</h3>
+        </div>
+
+        <div class="col-md-5">
+            <label for="manaval">Mana Value</label>
+            <h3 id="manaval">{{ card.manaValue }}</h3>
+        </div>
+
+        <div class="col-md-2">
+            <label for="set">SetID</label>
+            <h3 id="set"> {{ card.set }} </h3>
+        </div>
+
+        <div class="col-md-10">
+            <label for="quantity">Quantity</label>
+            <h3 id="quantity"> {{ card.cardQuantity }} </h3>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-10">
+            <label for="types">Card Types</label>
+            <h3 id="types"> {{ card.types }} </h3>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-10">
+            <label for="cardText">Card Text</label>
+            <h3 id="cardText"> {{ card.cardText }} </h3>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-10">
+            <label for="flavor">Card Flavor Text</label>
+            <h3 id="flavor"> {{ card.cardFlavor }} </h3>
+        </div>
+    </div>
+</div>
+{% endblock %}

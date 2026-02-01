@@ -1,0 +1,11 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<div class ="container">
+    <h1 style="color: orange"> Details! </h1>
+    <hr>
+    <p><strong>cardID:</strong> {{ error.cardID }}</p>
+    <p>Card Name: {{ error.cardName }}</p>
+    <p>Number in Collection: {{ error.quantity }}</p>
+</div>
+{% endblock %}

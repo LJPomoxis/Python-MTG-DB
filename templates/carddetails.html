@@ -1,0 +1,129 @@
+{% extends "navigationbar.html" %}
+
+{% block content %}
+<div class="content-box transparent-content-box grid-layout grid-3" style="align-items: start;">
+    <div class="content-box transparent-content-box">
+        <div class="card shadow-sm border-0 flex-grow-1">
+        {% if card.local %}
+              <img src="{{url_for('static', filename=card.image)}}"
+              class="mtg-card-img" 
+              alt="{{card.name}}">
+        {% else %}
+              <img src="{{card.image}}"
+              class="mtg-card-img"  
+              alt="{{card.name}}">
+        {% endif %}
+        </div>
+
+        <div class="content-box transparent-content-box">
+            {% if card.quantity == 1 %}
+            <h3 class="text-fantasy" style="text-align: center;">{{ card.quantity }} Copy</h3>
+            {% else %}
+            <h3 class="text-fantasy" style="text-align: center;">{{ card.quantity }} Copies</h3>
+            {% endif %}
+            <button type="button" class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#editTotal">
+              Edit Total
+            </button>
+            <div class="modal fade" id="editTotal" tabindex="-1" aria-labelledby="editTotalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editTotalLabel">Edit Total for {{card.name}} ({{card.setCode}})</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="collectionModify" class="dark-content-box grid-layout grid-2" method="post" action="/editCollectionEntry">
+                                <input name="cardID" id="cardID" class="form-control" type="hidden" value="{{card.ID}}">
+                                <input name="setID" id="setID" class="form-control" type="hidden" value="{{card.setID}}">
+                                <div class="content-box transparent-content-box">
+                                    <label for="actions" class="form-label text-white text-fantasy">Actions</label>
+                                    <select class="form-select" name="actions" id="actions">
+                                        <option value="Add" selected="selected">Add</option>
+                                        <option value="Remove">Remove</option>
+                                    </select>
+                                </div>
+                                <div class="content-box transparent-content-box">
+                                    <label for="quantity" class="form-label text-white text-fantasy">Card Quantity</label>
+                                    <input name="quantity" id="quantity" class="form-control" type="number" placeholder="Card Quantity" value="1">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button class="btn btn-custom" type="submit" form="collectionModify">Sumbit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-box">
+        <div class="content-box transparent-content-box">
+            <h2 class="text-fantasy">{{card.name}} ({{card.manaValue}})</h2>
+        </div>
+        <hr>
+        <div class="content-box transparent-content-box">
+            <h5 class="text-fantasy">
+            {% for type in card.types %}
+                {{type}}
+            {% endfor %}
+            </h5>
+        </div>
+        <hr>
+
+        {% if card.power %}
+        <div class="content-box transparent-content-box">
+            <h5 class="text-fantasy">{{card.power}}/{{card.toughness}}</h5>
+        </div>
+        <hr>
+        {% endif %}
+
+        {% if card.oracle or card.flavor %}
+        <div class="content-box transparent-content-box">
+            {% if card.oracle %}
+            <div class="content-box transparent-content-box">
+                <h5 class="text-fantasy">{{ card.oracle }}</h5>
+            </div>
+            {% endif %}
+            <hr>
+            {% if card.flavor %}
+            <div class="content-box transparent-content-box">
+                <h5 class="text-high-fantasy">{{ card.flavor }}</h5>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="content-box">
+        <div class="dark-content-box dark-edges">
+            <h4 class="text-fantasy text-white" style="text-align: center;">{{card.setName}} ({{card.setCode}})</h4>
+        </div>
+        {% if cardList %}
+        {% for item in cardList %}
+        <a href="{{ url_for('card_details', cardID=item.otherID, setID=item.otherSetID) }}"
+          style="cursor: pointer;"
+          data-bs-placement="left"
+          class="text-decoration-none text-reset"
+          data-bs-toggle="tooltip" 
+          data-bs-html="true" 
+          title="<img src='{{ item.otherImage }}' width='200px' />">
+            <div class="dark-content-box dark-edges">
+                <h5 class="text-fantasy text-white" style="text-align: center; background: #1e293b;">{{item.otherSetName}}</h5>
+            </div>
+        </a>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+  // Initialize all tooltips on the page
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
+</script>
+
+{% endblock %}
