@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance for Flask application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+ReadWritePaths=/var/www/mtgwebapp/static/images
+WorkingDirectory=/var/www/mtgwebapp
+ExecStart=/var/www/mtgwebapp/venv/bin/gunicorn --workers 3 --bind unix:/var/www/mtgwebapp/mtgwebapp.sock wsgi:application
+
+[Install]
+WantedBy=multi-user.target
