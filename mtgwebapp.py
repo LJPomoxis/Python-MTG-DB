@@ -23,6 +23,8 @@ if __name__ != '__main__':
     app.logger.setLevel(gunicorn_logger.level)
     #app.logger.info("Flask app logger successfully configured under Gunicorn.")
 
+load_dotenv()
+
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/1.0 ({EMAIL})"
 
