@@ -1,5 +1,4 @@
 :root {
-    /* Color Palette - Deep Slate & Royal Blue */
     --nav-bg: #0f172a;
     --nav-text: #f8f9fa;
     --nav-hover: #60a5fa;
@@ -14,7 +13,7 @@
     --brand-primary: #2563eb;
     --btn-hover: #1d4ed8;
     
-    /* MTG Card Specifics */
+    /* MTG Card Specific Styles*/
     --mtg-radius: 4.75% / 3.5%;
 }
 
@@ -26,8 +25,8 @@ body {
 
 textarea {
   field-sizing: content;
-  min-height: 4rem; /* Optional: Prevents it from being just one line */
-  width: 100%; /* Ensure container handles width */
+  min-height: 4rem;
+  width: 100%;
 }   
 
 .form-label {
@@ -51,7 +50,7 @@ textarea {
 
 .navbar-brand:hover {
     color: var(--nav-hover) !important;
-    transform: translateY(-2px); /* Restored the lift */
+    transform: translateY(-2px);
 }
 
 .navbar.bg-custom .nav-link {
@@ -64,8 +63,8 @@ textarea {
 
 .navbar.bg-custom .nav-link:hover {
     color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.1); /* Subtle background highlight */
-    transform: translateY(-2px); /* Restored the lift */
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
 }
 
 .navbar .form-control {
@@ -92,7 +91,7 @@ textarea {
     outline: none;
 }
 
-/* --- Specific Search Button adjustment --- */
+/* --- Search Button --- */
 .navbar .btn-custom {
     padding: 0.4rem 1rem;
     font-size: 0.9rem;
@@ -116,7 +115,7 @@ textarea {
     border-radius: 12px;
     padding: 1.5rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    /* Allow space for the hover 'lift' without clipping */
+
     display: flex;
     flex-direction: column;
     overflow: visible; 
@@ -129,7 +128,7 @@ textarea {
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: .5rem;
     width: 100%;
-    max-width: 700px; /* Keeps the search bar from getting too wide */
+    max-width: 700px;
     margin: 0 auto;
 }
 
@@ -151,7 +150,7 @@ textarea {
 .content-box.grid-layout {
     display: grid !important;
     gap: 1.5rem;
-    align-items: end; /* Keeps your buttons aligned with inputs */
+    align-items: end;
 }
 
 .content-box.grid-2 {
@@ -176,25 +175,24 @@ textarea {
     flex-direction: column;
 }
 
-/* Specific fix for the Random Card box in index.html */
+/* Fix for index.html random card*/
 .content-box .card {
     background: transparent !important;
     border: none !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: visible; /* Allows the shadow and lift to show */
+    overflow: visible;
     margin-top: auto;
     margin-bottom: auto;
 }
 
-/* --- The Card Image Scaling --- */
+/* --- Card Image Scaling --- */
 .mtg-card-img {
     border-radius: var(--mtg-radius);
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     
-    /* Constraint: Ensures it never exceeds the box height */
     max-width: 100%;
     max-height: 380px; 
     width: auto;
@@ -202,16 +200,93 @@ textarea {
     object-fit: contain;
 }
 
-/* Scryfall Hover: Only triggers if there is room */
+/* Scryfall Style Hover*/
 .card:hover .mtg-card-img {
-    transform: translateY(-10px); /* Reduced lift to stay in bounds */
+    transform: translateY(-10px);
     box-shadow: 0 20px 30px rgba(0,0,0,0.3);
-    /* z-index: 10; */
 }
 
 .card.h-100 {
-    background: transparent !important; /* Removes Bootstrap's white card back */
+    background: transparent !important;
 }
+
+/* --- Mana Symbols --- */
+
+.ms {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    vertical-align: middle;
+    margin-right: 2px;
+    background-image: url('/var/www/mtgwebapp/static/images/Mana.svg');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    border-radius: 50%;
+    
+    box-shadow: -1px 1px 1px rgba(0,0,0,0.3);
+    
+    text-indent: -9999px;
+    overflow: hidden;
+}
+
+.ms-0 { background-position: 0px 0px; }
+.ms-1 { background-position: -105px 0px; }
+.ms-2 { background-position: -210px 0px; }
+.ms-3 { background-position: -315px 0px; }
+.ms-4 { background-position: -420px 0px; }
+.ms-5 { background-position: -525px 0px; }
+.ms-6 { background-position: -630px 0px; }
+.ms-7 { background-position: -735px 0px; }
+.ms-8 { background-position: -840px 0px; }
+.ms-9 { background-position: -945px 0px; }
+.ms-10 { background-position: 0px -105px; }
+.ms-11 { background-position: -105px -105px; }
+.ms-12 { background-position: -210px -105px; }
+.ms-13 { background-position: -315px -105px; }
+.ms-14 { background-position: -420px -105px; }
+.ms-15 { background-position: -525px -105px; }
+.ms-16 { background-position: -630px -105px; }
+.ms-17 { background-position: -735px -105px; }
+.ms-18 { background-position: -840px -105px; }
+.ms-19 { background-position: -945px -105px; }
+.ms-20 { background-position: 0px -210px; }
+
+.ms-X { background-position: -105px -210px; }
+.ms-Y { background-position: -210px -210px; }
+.ms-Z { background-position: -315px -210px; }
+
+.ms-W { background-position: -420px -210px; }
+.ms-U { background-position: -525px -210px; }
+.ms-B { background-position: -630px -210px; }
+.ms-R { background-position: -735px -210px; }
+.ms-G { background-position: -840px -210px; }
+
+/*snow mana*/
+
+.ms-WU { background-position: 0px -315px; }
+.ms-WB { background-position: -105px -315; }
+.ms-UB { background-position: -210px -315; }
+.ms-UR { background-position: -315px -315; }
+.ms-BR { background-position: -420px -315; }
+.ms-BG { background-position: -525px -315; }
+.ms-RW { background-position: -630px -315; }
+.ms-RG { background-position: -735px -315; }
+.ms-GW { background-position: -840px -315; }
+.ms-GU { background-position: -945px -315; }
+
+.ms-2W { background-position: 0px -420px; }
+.ms-2U { background-position: -105px -420px; }
+.ms-2B { background-position: -210px -420px; }
+.ms-2R { background-position: -315px -420px; }
+.ms-2G { background-position: -420px -420px; }
+.ms-WP { background-position: -525px -420px; }
+.ms-UP { background-position: -630px -420px; }
+.ms-BP { background-position: -735px -420px; }
+.ms-RP { background-position: -840px -420px; }
+.ms-GP { background-position: -945px -420px; }
+
+/* Add other symbols */
 
 /* --- Buttons --- */
 .btn-custom {
@@ -234,6 +309,6 @@ textarea {
     background-color: var(--nav-bg);
 }
 
-/* --- Typography --- */
+/* --- Special Fonts --- */
 .text-fantasy { font-family: 'Cinzel', serif; }
 .text-high-fantasy { font-family: 'Cinzel Decorative', serif; }

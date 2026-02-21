@@ -35,7 +35,7 @@ CUSTOM_HEADERS = {
 }
 
 IMAGES_DIR_PATH = "/var/www/mtgwebapp/static/images/"
-IMAGE_DISPLAY_PATH = "images/"
+IMAGE_DISPLAY_PATH = "images/cards/"
 
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
 
