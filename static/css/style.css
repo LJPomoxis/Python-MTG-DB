@@ -217,74 +217,71 @@ textarea {
     width: 1.1em;
     height: 1.1em;
     vertical-align: middle;
-    margin-right: 2px;
-    background-image: url('/var/www/mtgwebapp/static/images/Mana.svg');
+    
+    background-image: url('/static/images/Mana.svg');
+    background-size: 995.24% 695.24%;
     background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
+    
     border-radius: 50%;
-    
-    box-shadow: -1px 1px 1px rgba(0,0,0,0.3);
-    
     text-indent: -9999px;
     overflow: hidden;
 }
 
-.ms-0 { background-position: 0px 0px; }
-.ms-1 { background-position: -105px 0px; }
-.ms-2 { background-position: -210px 0px; }
-.ms-3 { background-position: -315px 0px; }
-.ms-4 { background-position: -420px 0px; }
-.ms-5 { background-position: -525px 0px; }
-.ms-6 { background-position: -630px 0px; }
-.ms-7 { background-position: -735px 0px; }
-.ms-8 { background-position: -840px 0px; }
-.ms-9 { background-position: -945px 0px; }
-.ms-10 { background-position: 0px -105px; }
-.ms-11 { background-position: -105px -105px; }
-.ms-12 { background-position: -210px -105px; }
-.ms-13 { background-position: -315px -105px; }
-.ms-14 { background-position: -420px -105px; }
-.ms-15 { background-position: -525px -105px; }
-.ms-16 { background-position: -630px -105px; }
-.ms-17 { background-position: -735px -105px; }
-.ms-18 { background-position: -840px -105px; }
-.ms-19 { background-position: -945px -105px; }
-.ms-20 { background-position: 0px -210px; }
+.ms-0 { background-position: 0% 0%; }
+.ms-1 { background-position: 11.17% 0%; }
+.ms-2 { background-position: 22.34% 0%; }
+.ms-3 { background-position: 33.51% 0%; }
+.ms-4 { background-position: 44.68% 0%; }
+.ms-5 { background-position: 55.85% 0%; }
+.ms-6 { background-position: 67.02% 0%; }
+.ms-7 { background-position: 78.19% 0%; }
+.ms-8 { background-position: 89.36% 0%; }
+.ms-9 { background-position: 100% 0%; }
+.ms-10 { background-position: 0% 16.8%; }
+.ms-11 { background-position: 11.17% 16.8%; }
+.ms-12 { background-position: 22.34% 16.8%; }
+.ms-13 { background-position: 33.51% 16.8%; }
+.ms-14 { background-position: 44.68% 16.8%; }
+.ms-15 { background-position: 55.85% 16.8%; }
+.ms-16 { background-position: 67.02% 16.8%; }
+.ms-17 { background-position: 78.19% 16.8%; }
+.ms-18 { background-position: 89.36% 16.8%; }
+.ms-19 { background-position: 100% 16.8%; }
+.ms-20 { background-position: 0% 33.6%; }
 
-.ms-X { background-position: -105px -210px; }
-.ms-Y { background-position: -210px -210px; }
-.ms-Z { background-position: -315px -210px; }
+.ms-x { background-position: 11.17% 33.6%; }
+.ms-y { background-position: 22.34% 33.6%; }
+.ms-z { background-position: 33.51% 33.6%; }
 
-.ms-W { background-position: -420px -210px; }
-.ms-U { background-position: -525px -210px; }
-.ms-B { background-position: -630px -210px; }
-.ms-R { background-position: -735px -210px; }
-.ms-G { background-position: -840px -210px; }
+.ms-w { background-position: 44.68% 33.6%; }
+.ms-u { background-position: 55.85% 33.6%; }
+.ms-b { background-position: 67.02% 33.6%; }
+.ms-r { background-position: 78.19% 33.6%; }
+.ms-g { background-position: 89.36% 33.6%; }
 
 /*snow mana*/
 
-.ms-WU { background-position: 0px -315px; }
-.ms-WB { background-position: -105px -315; }
-.ms-UB { background-position: -210px -315; }
-.ms-UR { background-position: -315px -315; }
-.ms-BR { background-position: -420px -315; }
-.ms-BG { background-position: -525px -315; }
-.ms-RW { background-position: -630px -315; }
-.ms-RG { background-position: -735px -315; }
-.ms-GW { background-position: -840px -315; }
-.ms-GU { background-position: -945px -315; }
+.ms-wu { background-position: 0% 50.4%; }
+.ms-wb { background-position: 11.17% 50.4%; }
+.ms-ub { background-position: 22.34% 50.4%; }
+.ms-ur { background-position: 33.51% 50.4%; }
+.ms-br { background-position: 44.68% 50.4%; }
+.ms-bg { background-position: 55.85% 50.4%; }
+.ms-rw { background-position: 67.02% 50.4%; }
+.ms-rg { background-position: 78.19% 50.4%; }
+.ms-gw { background-position: 89.36% 50.4%; }
+.ms-gu { background-position: 100% 50.4%; }
 
-.ms-2W { background-position: 0px -420px; }
-.ms-2U { background-position: -105px -420px; }
-.ms-2B { background-position: -210px -420px; }
-.ms-2R { background-position: -315px -420px; }
-.ms-2G { background-position: -420px -420px; }
-.ms-WP { background-position: -525px -420px; }
-.ms-UP { background-position: -630px -420px; }
-.ms-BP { background-position: -735px -420px; }
-.ms-RP { background-position: -840px -420px; }
-.ms-GP { background-position: -945px -420px; }
+.ms-2w { background-position: 0% 67.2%; }
+.ms-2u { background-position: 11.17% 67.2%; }
+.ms-2b { background-position: 22.34% 67.2%; }
+.ms-2r { background-position: 33.51% 67.2%; }
+.ms-2g { background-position: 44.68% 67.2%; }
+.ms-wp { background-position: 55.85% 67.2%; }
+.ms-up { background-position: 67.02% 67.2%; }
+.ms-bp { background-position: 78.19% 67.2%; }
+.ms-rp { background-position: 89.36% 67.2%; }
+.ms-gp { background-position: 100% 67.2%; }
 
 /* Add other symbols */
 

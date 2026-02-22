@@ -39,6 +39,8 @@ IMAGE_DISPLAY_PATH = "images/cards/"
 
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
 
+MANA_PATTERN = re.compile(r"\{([^}]+)\}")
+
 app.config['DB_HOST'] = os.getenv('DB_HOST')
 app.config['DB_USER'] = os.getenv('DB_USER')
 app.config['DB_PASS'] = os.getenv('DB_PASS')
@@ -72,6 +74,15 @@ def download_file(url, filename):
 def check_for_file(filename):
     filePath = IMAGES_DIR_PATH + filename
     return os.path.isfile(filePath)
+
+# Returns list of html 
+def clean_mana(manaVal):
+    if not manaVal:
+        return []
+
+    symbols = MANA_PATTERN.findall(manaVal.lower())
+
+    return [f'<span class="ms ms-{s.replace("/", "")}"></span>' for s in symbols]
 
 @app.route('/')
 @app.route('/index')
@@ -272,6 +283,8 @@ def card_details(cardID, setID):
             'power': power,
             'toughness': toughness
         }
+    
+    card['manaValue'] = clean_mana(card['manaValue'])
 
     cursor.execute("""
         SELECT Tl.type

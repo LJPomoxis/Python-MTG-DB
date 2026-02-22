@@ -60,7 +60,12 @@
 
     <div class="content-box">
         <div class="content-box transparent-content-box">
-            <h2 class="text-fantasy">{{card.name}} ({{card.manaValue}})</h2>
+            <h2 class="text-fantasy">
+                {{card.name}}
+                {% for pip in card.manaValue %}
+                    {{pip | safe}}
+                {% endfor %}
+            </h2>
         </div>
         <hr>
         <div class="content-box transparent-content-box">
