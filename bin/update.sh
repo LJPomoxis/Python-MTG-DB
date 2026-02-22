@@ -58,3 +58,4 @@ if [ "$pushchoice" == "y" ]; then
     git push origin main --tags
 else
     echo "Ensure code is pushed to origin at a later time."
+fi
