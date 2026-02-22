@@ -26,7 +26,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.1.8"
+MTG_APP_VERSION = "0.1.9"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"

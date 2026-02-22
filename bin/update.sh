@@ -56,10 +56,10 @@ $VENV_BIN/bump-my-version bump $OPTION \
     --commit --tag --message "Bump version: {current_version} → {new_version} - $commitvar"
 
 if [ $? -eq 0 ]; then
-    printf "---------------------------------------\n"
+    printf "\n%s---------------------------------------\n"
     printf "${GREEN}Success! Version updated and tagged.${NC}\n"
 else
-    printf "---------------------------------------\n"
+    printf "\n%s---------------------------------------\n"
     printf "${RED}Error: Something went wrong with the version bump.${NC}\n"
 fi
 
