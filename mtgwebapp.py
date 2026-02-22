@@ -26,8 +26,10 @@ if __name__ != '__main__':
 
 load_dotenv()
 
+MTG_APP_VERSION = "0.1.6"
+
 EMAIL = os.getenv('EMAIL')
-APP_INFO = F"mtgDB/1.0 ({EMAIL})"
+APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
 
 CUSTOM_HEADERS = {
     'User-Agent': APP_INFO,

@@ -5,7 +5,7 @@ __pycache__/
 
 # Ignore scripts directory and shell scripts, personal scripts for db
 scripts/
-*.sh
+reload.sh
 
 # Ignore virtual environment, unecessary clutter
 venv/
