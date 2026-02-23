@@ -26,7 +26,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.1.9"
+MTG_APP_VERSION = "0.1.10"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
@@ -42,6 +42,7 @@ IMAGE_DISPLAY_PATH = "images/cards/"
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
 
 MANA_PATTERN = re.compile(r"\{([^}]+)\}")
+BULK_CARD_PATTERN = re.compile(r"^(.+?)(?:\s+([A-Z]{3}))?(?:\s+x(\d+))?(?:\s+(\*))?$")
 
 app.config['DB_HOST'] = os.getenv('DB_HOST')
 app.config['DB_USER'] = os.getenv('DB_USER')
@@ -77,7 +78,7 @@ def check_for_file(filename):
     filePath = IMAGES_DIR_PATH + filename
     return os.path.isfile(filePath)
 
-# Returns list of html 
+# Returns list of html elements to display mana pips
 def clean_mana(manaVal):
     if not manaVal:
         return []
@@ -482,8 +483,6 @@ def deck_builder():
 
 @app.route('/deckadd', methods=['POST', 'GET'])
 def new_deck():
-    errors = None
-
     if request.method == 'POST':
 
         deckList = request.form.get('deckList')
@@ -491,15 +490,17 @@ def new_deck():
 
         cards = []
         for line in lines:
-            items = line.split()
-            cards.append(items)
+            items = BULK_CARD_PATTERN.findall(line)
+            card = list(items[0])
+            card[0] = re.sub(r'[^a-z0-9\s]', '', card[0].lower())
+            cards.append(card)
 
         errors=cards
 
         return render_template("newdeck.html", errors=errors)
     else:
         
-        return render_template("newdeck.html", errors=errors)
+        return render_template("newdeck.html", errors=None)
 
 @app.route('/deck/<int:deckID>')
 def deck_details(deckID):
