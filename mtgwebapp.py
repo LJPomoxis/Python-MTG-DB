@@ -1,4 +1,5 @@
 import mylibs.DBhelperfunctions as DBHF
+from mylibs.celeryfunctions import fetch_card_data, background_file_download
 import os.path
 from flask import Flask, request, redirect, render_template, g
 from dotenv import load_dotenv
@@ -22,21 +23,20 @@ if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
-    #app.logger.info("Flask app logger successfully configured under Gunicorn.")
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.1.10"
+MTG_APP_VERSION = "0.2.0"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
 
-CUSTOM_HEADERS = {
+HEADER = {
     'User-Agent': APP_INFO,
     'Accept': 'application/json'
 }
 
-IMAGES_DIR_PATH = "/var/www/mtgwebapp/static/images/"
+IMAGES_DIR_PATH = "/var/www/mtgwebapp/static/images/cards/"
 IMAGE_DISPLAY_PATH = "images/cards/"
 
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
@@ -61,18 +61,6 @@ def get_db():
             db=app.config['DB_NAME']
         )
     return g.db
-
-def download_file(url, filename):
-    filePath = IMAGES_DIR_PATH + filename
-    try:
-        response = requests.get(url, headers=CUSTOM_HEADERS, stream=True)
-        response.raise_for_status()
-        with open(filePath, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
-    except requests.exceptions.RequestException as e:
-        return False
-    return True
 
 def check_for_file(filename):
     filePath = IMAGES_DIR_PATH + filename
@@ -123,21 +111,11 @@ def home():
 
     filename = F"{server['ID']}-{server['setID']}.jpg"
 
-    rand = random.randint(1,3)
-
-    # 1 in 3 chance of downloading image if it isn't already, 
-    # helps with load times and allows for local image hosting instead of from scryfall
     if check_for_file(filename):
         image['url'] = IMAGE_DISPLAY_PATH + filename
         image['local'] = True
-    elif rand == 5:
-        checkFile = download_file(image['url'], filename)
-        if checkFile:
-            image['url'] = IMAGE_DISPLAY_PATH + filename
-            image['local'] = True
-        else:
-            image['local'] = False
     else:
+        background_file_download.delay(image['url'], filename, IMAGES_DIR_PATH, HEADER)
         image['local'] = False
 
     server['image'] = image
@@ -396,7 +374,7 @@ def scryfall_query_card():
         response = {}
 
         try:
-            response = requests.get(url, headers=CUSTOM_HEADERS, timeout=(5, 10))
+            response = requests.get(url, headers=HEADER, timeout=(5, 10))
             response.raise_for_status() 
         except requests.exceptions.Timeout:
             return render_template('scryfallcardform.html', check=2, setCodes=setCodes, results="The Scryfall API timed out")
@@ -496,6 +474,10 @@ def new_deck():
             cards.append(card)
 
         errors=cards
+
+        # Check database collection table for each card
+        # If card not present fetch from scryfall and add to a "proxy" table
+        # Proxy table will be like collection so all card details will be added into other tables
 
         return render_template("newdeck.html", errors=errors)
     else:
