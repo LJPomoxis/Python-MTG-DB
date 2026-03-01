@@ -6,7 +6,7 @@ import requests
 celery = Celery('MTGWebAppTasks',  backend='redis://localhost', broker='redis://localhost:6379/0')
 
 celery.conf.task_routes = {
-    'MTGWebAppTasks.tasks.fetch_card_data': {'queue': 'api_queue'},
+    'mylibs.tasks.fetch_card_data': {'queue': 'api_queue'},
 }
 
 @celery.task
