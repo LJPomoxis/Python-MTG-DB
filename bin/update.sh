@@ -53,7 +53,7 @@ fi
 
 $VENV_BIN/bump-my-version bump $OPTION \
     --allow-dirty \
-    --commit --tag --message "Bump version: {current_version} → {new_version} - $commitvar"
+    --commit --tag --message "$commitvar"
 
 if [ $? -eq 0 ]; then
     printf "\n%s---------------------------------------\n"
