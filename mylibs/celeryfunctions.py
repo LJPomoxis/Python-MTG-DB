@@ -15,6 +15,14 @@ def hello():
 
 @celery.task(bind=True, max_retries=3)
 def fetch_card_data(card_data, APIHeader):
+
+    # Cards passed here will already be checked to ensure that they aren't present in DB
+    # The passed card also won't be a card but rather a prebuilt query
+    # Thus any card passed here will be used as a query to scryfall
+    # Use card details to add card to 'proxy' tables (These need to be designed and added to be used)
+
+    # Handle failures like 404 or DNE for give card
+
     # API logic here
     time.sleep(1)
     pass

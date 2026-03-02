@@ -26,7 +26,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.2.4"
+MTG_APP_VERSION = "0.2.6"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
@@ -67,13 +67,17 @@ def check_for_file(filename):
     return os.path.isfile(filePath)
 
 # Returns list of html elements to display mana pips
-def clean_mana(manaVal):
-    if not manaVal:
+def clean_mana(pipString):
+    if not pipString:
         return []
 
-    symbols = MANA_PATTERN.findall(manaVal.lower())
+    symbols = MANA_PATTERN.findall(pipString.lower())
 
-    return [f'<span class="ms ms-{s.replace("/", "")}"></span>' for s in symbols]
+    return [f'<span class="ms ms-{s}"></span>' for s in symbols]
+
+def mana_html_wrapper(pipString):
+    pip = pipString.group(1)
+    return f'<span class="ms ms-{pip.lower()}"></span>'
 
 @app.route('/')
 @app.route('/index')
@@ -264,8 +268,10 @@ def card_details(cardID, setID):
             'power': power,
             'toughness': toughness
         }
-    
-    card['manaValue'] = clean_mana(card['manaValue'])
+    card['manaValue'] = MANA_PATTERN.sub(mana_html_wrapper, card['manaValue'])
+    card['oracle'] = MANA_PATTERN.sub(mana_html_wrapper, card['oracle'])
+
+    #card['manaValue'] = clean_mana(card['manaValue'])
 
     cursor.execute("""
         SELECT Tl.type

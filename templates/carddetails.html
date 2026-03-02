@@ -62,9 +62,7 @@
         <div class="content-box transparent-content-box">
             <h2 class="text-fantasy">
                 {{card.name}}
-                {% for pip in card.manaValue %}
-                    {{pip | safe}}
-                {% endfor %}
+                {{card.manaValue | safe}}
             </h2>
         </div>
         <hr>
@@ -77,27 +75,27 @@
         </div>
         <hr>
 
-        {% if card.power %}
-        <div class="content-box transparent-content-box">
-            <h5 class="text-fantasy">{{card.power}}/{{card.toughness}}</h5>
-        </div>
-        <hr>
-        {% endif %}
-
         {% if card.oracle or card.flavor %}
         <div class="content-box transparent-content-box">
             {% if card.oracle %}
             <div class="content-box transparent-content-box">
-                <h5 class="text-fantasy">{{ card.oracle }}</h5>
+                <h5 class="text-fantasy">{{card.oracle | safe}}</h5>
             </div>
             {% endif %}
             <hr>
             {% if card.flavor %}
             <div class="content-box transparent-content-box">
-                <h5 class="text-high-fantasy">{{ card.flavor }}</h5>
+                <h5 class="text-high-fantasy">{{card.flavor}}</h5>
             </div>
             {% endif %}
         </div>
+        {% endif %}
+
+        {% if card.power %}
+        <div class="content-box transparent-content-box">
+            <h5 class="text-fantasy">{{card.power}}/{{card.toughness}}</h5>
+        </div>
+        <hr>
         {% endif %}
     </div>
 
