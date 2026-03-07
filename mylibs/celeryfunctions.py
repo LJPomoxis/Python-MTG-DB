@@ -2,6 +2,7 @@ from celery import Celery
 from time import time
 from celery.exceptions import MaxRetriesExceededError
 import requests
+import DBhelperfunctions as DBHF
 
 celery = Celery('MTGWebAppTasks',  backend='redis://localhost', broker='redis://localhost:6379/0')
 
@@ -14,7 +15,7 @@ def hello():
     return 'Hello World'
 
 @celery.task(bind=True, max_retries=3)
-def fetch_card_data(card_data, APIHeader):
+def fetch_card_data(card_url, HEADER, NOT_DFC):
 
     # Cards passed here will already be checked to ensure that they aren't present in DB
     # The passed card also won't be a card but rather a prebuilt query
@@ -23,8 +24,24 @@ def fetch_card_data(card_data, APIHeader):
 
     # Handle failures like 404 or DNE for give card
 
-    # API logic here
+    response = {}
+
+    try:
+        response = requests.get(card_url, headers=HEADER, timeout=(5, 10))
+        response.raise_for_status() 
+    except requests.exceptions.Timeout:
+        return "API Timed Out"
+    except requests.exceptions.RequestException as e:
+        return f"API Error: {e}"
+
+    data = response.json()
     time.sleep(1)
+
+    # Celery will be stateless in this interaction
+    # It will simply be handed data, query the api, process results, pass off results to DAL (Databse Access Layer)
+
+    # DAL should function as a batcher
+
     pass
 
 # We don't care if this fails, we check the file location each time we load an image

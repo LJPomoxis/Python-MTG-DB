@@ -7,9 +7,11 @@ __pycache__/
 scripts/
 reload.sh
 
-# Ignore virtual environment, unecessary clutter
+# Ignore virtual environment, and other libraries
 venv/
 .venv/
+mariadb-connector-cpp/
+redis-plus-plus/
 
 # Ignore env files, sensitive credentials
 *.env

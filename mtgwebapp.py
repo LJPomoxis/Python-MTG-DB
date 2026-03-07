@@ -8,14 +8,15 @@ import random
 import logging
 import requests
 import re
+import json
+import redis
 
 """
-DEV NOTE
-
-If we want to create any actual user based web server, we will need to refactor many
-of the MySQL interactions to remove any race conditions that could cause data collisions
-to happen in the database
+If changes are made to create user based system, SQL queries and function calls need
+to be refactored to prevent race conditions
 """
+
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 app = Flask(__name__)
 
@@ -26,7 +27,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.2.6"
+MTG_APP_VERSION = "0.3.0"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
@@ -61,6 +62,11 @@ def get_db():
             db=app.config['DB_NAME']
         )
     return g.db
+
+def push_task_to_cpp(data_list):
+    payload = json.dumps(data_list) 
+
+    r.lpush("mtgdb_queue", payload)
 
 def check_for_file(filename):
     filePath = IMAGES_DIR_PATH + filename
@@ -395,8 +401,7 @@ def scryfall_query_card():
         notDfc = Dfc in NOT_DFC
 
         if notDfc:
-            card = DBHF.process_card_json(card, data, cursor)
-            cards.append(card)
+            cards = DBHF.process_card_json(card, data, cursor)
         else:
             cards = DBHF.process_dfc_json(card, data, cursor)
 

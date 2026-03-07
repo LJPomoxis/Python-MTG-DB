@@ -381,6 +381,8 @@ def process_dfc_json(baseCard, data, cursor):
     return cards
 
 def process_card_json(card, data, cursor):
+    cards = []
+
     card['name'] = data['name']
 
     card['color'] = find_color_name(data['colors'])
@@ -408,4 +410,6 @@ def process_card_json(card, data, cursor):
     card['ID'] = get_cardID(card, cursor)
     card['setID'] = get_setID_from_setCode(card, cursor)
 
-    return card
+    cards.append(card)
+
+    return cards
