@@ -1,42 +1,54 @@
 #include <iostream>
 #include <iomanip>
-#include <ctime>
 #include <mutex>
+#include <thread>
+#include <fmt/core.h>
+#include <sw/redis++/redis++.h>
+#include <mariadb-connector-cpp/include/conncpp.hpp>
 
-using namespace std;
+using TimePoint = std::chrono::steady_clock::time_point;
+namespace chrono = std::chrono;
 
-mutex api_mutex;
+/*
+try {
+    using namespace sw::redis;
+    auto redis = Redis("tcp://127.0.0.1:6379");
+
+    redis.set("key", "val");
+    auto val = redis.get("key");
+}
+*/
 
 class ApiClient {
 private:
-    mutex api_mutex;
-
-    chrono::steady_clock::time_point lastCall = chrono::steady_clock::now() - chrono::seconds(1);
+    std::mutex api_mutex;
+    TimePoint lastCall = chrono::steady_clock::now() - chrono::seconds(1);
     const chrono::milliseconds interval{500};
 public:
-    string query_scryfall(string query) {
-        lock_guard lock(api_mutex);
+    void wait(std::function<void()> func) {
+        std::lock_guard<std::mutex> lock(api_mutex);
 
         auto now = chrono::steady_clock::now();
         auto elapsed = chrono::duration_cast<chrono::milliseconds>(now - lastCall);
 
         if(elapsed < interval) {
-            // Sleep until interval is done
+            // wait out remainder of timer
+           std::this_thread::sleep_for(interval - elapsed);
         }
 
-        result = "Querying API: " + query + "...";
-        log_info(result);
-
+        func();
         lastCall = chrono::steady_clock::now();
-        return result;
     }
-}
+};
 
-void log_info(const string& message);
-void log_error(const string& message);
-string atomic_query(string query);
+std::string i_to_str(int num);
+void log_info(const std::string& message);
+void log_error(const std::string& message);
+void worker_thread(ApiClient& client, std::string query);
+void query_scryfall(std::string query);
 
 int main() {
+    using namespace std;
     // loop and check redis queue
 
     // after intake number met or time increment, execute api query and put results in database
@@ -44,18 +56,54 @@ int main() {
     // Will also need to handle other async tasks with new threads
     // ensure api query function is atomic to respect rate limit for scryfall
 
-    // go back to looping
-    quit();
+    ApiClient GlobalClient;
+    vector<thread> threads;
+
+    string query = "example query";
+    for(int i=0; i < 5; i++) {
+        std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
+        log_info(iterMsg);
+        threads.emplace_back(worker_thread, ref(GlobalClient), query);
+    }
+
+    for(auto& t : threads) t.join();
+    
+    return 0;
 }
 
-void log_info(const string& message) {
-    auto now = time(nullptr);
-    cout << "[INFO] " << put_time(localtime(&now), "%Y-%m-%d %H:%M:%S") 
-              << " - " << message << endl;
+std::string i_to_str(int num) {
+    std::string strNum = "00";
+    char charNum = '0';
+    if (num > 9) {
+        char top = '0' + (num / 10);
+        char bottom = '0' + (num % 10);
+        strNum[0] = top;
+        strNum[1] = bottom;
+    } else {
+        charNum += num;
+        strNum = charNum;
+    }
+    return strNum;
 }
 
-void log_error(const string& message) {
-    auto now = time(nullptr);
-    cerr << "[ERROR] " << put_time(localtime(&now), "%Y-%m-%d %H:%M:%S") 
-              << " - " << message << endl;
+void log_info(const std::string& message) {
+    auto now = chrono::system_clock::now();
+    std::cout << fmt::format("[INFO] {:%F %T} - {}\n", now, message);
+}
+
+void log_error(const std::string& message) {
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    std::cerr << fmt::format("[ERROR] {:%F %T} - {}\n", now, message);
+}
+
+void worker_thread(ApiClient& client, std::string query) {
+    client.wait([&]() {
+        query_scryfall(query);
+    });
+}
+
+void query_scryfall(std::string query) {
+    std::string result = "Trying: " + query;
+    log_info(result);
 }
