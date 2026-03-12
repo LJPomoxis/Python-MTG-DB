@@ -26,7 +26,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.6.1"
+MTG_APP_VERSION = "0.6.2"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
@@ -493,7 +493,7 @@ def new_deck():
             card.extend(list(items[0]))
             dCard = dict(zip(keys, card))
             dCard['name'] = re.sub(r'[^a-z0-9\s]', '', dCard['name'].lower())
-            dCard['url'] = build_card_query(card['name'], card['set'])
+            dCard['url'] = build_card_query(dCard['name'], dCard['set'])
             push_task_to_cpp(dCard)
             cards.append(dCard)
 
