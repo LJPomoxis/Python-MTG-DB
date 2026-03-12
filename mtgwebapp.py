@@ -1,5 +1,4 @@
 import mylibs.DBhelperfunctions as DBHF
-from mylibs.celeryfunctions import fetch_card_data, background_file_download
 import os.path
 from flask import Flask, request, redirect, render_template, g
 from dotenv import load_dotenv
@@ -27,7 +26,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.4.1"
+MTG_APP_VERSION = "0.5.0"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
@@ -125,7 +124,14 @@ def home():
         image['url'] = IMAGE_DISPLAY_PATH + filename
         image['local'] = True
     else:
-        background_file_download.delay(image['url'], filename, IMAGES_DIR_PATH, HEADER)
+        #background_file_download.delay(image['url'], filename, IMAGES_DIR_PATH, HEADER)
+        fileDownload = {}
+        fileDownload['type'] = "CardImageDownload"
+        fileDownload['url'] = image['url']
+        fileDownload['filename'] = filename
+        fileDownload['path'] = IMAGES_DIR_PATH
+        fileDownload['header'] = HEADER
+        push_task_to_cpp(fileDownload)
         image['local'] = False
 
     server['image'] = image
@@ -361,6 +367,7 @@ def edit_collection_total():
     cursor.close()
     return redirect(referrerUrl)
 
+# Refactor to allow for background processing using cpp process
 @app.route('/scryfalladdcard', methods=['POST', 'GET'])
 def scryfall_query_card():
     conn = get_db()
@@ -478,17 +485,16 @@ def new_deck():
         lines = deckList.splitlines()
 
         cards = []
+        keys = ['type', 'name', 'set', 'amount', 'commander']
+        cards.append('deckCardAdd')
         for line in lines:
             items = BULK_CARD_PATTERN.findall(line)
             card = list(items[0])
             card[0] = re.sub(r'[^a-z0-9\s]', '', card[0].lower())
-            cards.append(card)
+            push_task_to_cpp(dict(zip(keys, card)))
+            cards.append(dict(zip(keys, card)))
 
         errors=cards
-
-        # Check database collection table for each card
-        # If card not present fetch from scryfall and add to a "proxy" table
-        # Proxy table will be like collection so all card details will be added into other tables
 
         return render_template("newdeck.html", errors=errors)
     else:

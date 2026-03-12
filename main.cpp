@@ -13,9 +13,6 @@ namespace chrono = std::chrono;
 try {
     using namespace sw::redis;
     auto redis = Redis("tcp://127.0.0.1:6379");
-
-    redis.set("key", "val");
-    auto val = redis.get("key");
 }
 */
 

@@ -1,6 +1,5 @@
 import re
 
-
 COLORS_LIST = ["W", "U", "B", "R", "G"]
 
 COLOR_MAP = {
