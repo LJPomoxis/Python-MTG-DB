@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 #include <sw/redis++/redis++.h>
 #include <mariadb-connector-cpp/include/conncpp.hpp>
+#include <nlohmann/json.hpp>
 
 using TimePoint = std::chrono::steady_clock::time_point;
 namespace chrono = std::chrono;
@@ -45,6 +46,13 @@ void worker_thread(ApiClient& client, std::string query);
 void query_scryfall(std::string query);
 
 int main() {
+    using namespace sw::redis;
+    try {
+        auto redis = Redis("tcp://127.0.0.1:6379");
+    } catch (const Error &e) {
+        // Connection error
+        std::cout << &e << std::endl;
+    }
     using namespace std;
     // loop and check redis queue
 
@@ -54,17 +62,21 @@ int main() {
     // ensure api query function is atomic to respect rate limit for scryfall
 
     ApiClient GlobalClient;
-    vector<thread> threads;
+    bool test = true;
 
-    string query = "example query";
-    for(int i=0; i < 5; i++) {
-        std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
-        log_info(iterMsg);
-        threads.emplace_back(worker_thread, ref(GlobalClient), query);
+    while(test) {
+        vector<thread> threads;
+
+        string query = "example query";
+        for(int i=0; i < 5; i++) {
+            std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
+            log_info(iterMsg);
+            threads.emplace_back(worker_thread, ref(GlobalClient), query);
+        }
+
+        for(auto& t : threads) t.join();
+        test = false;
     }
-
-    for(auto& t : threads) t.join();
-    
     return 0;
 }
 
