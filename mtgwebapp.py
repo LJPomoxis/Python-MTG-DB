@@ -26,7 +26,7 @@ if __name__ != '__main__':
 
 load_dotenv()
 
-MTG_APP_VERSION = "0.6.0"
+MTG_APP_VERSION = "0.6.1"
 
 EMAIL = os.getenv('EMAIL')
 APP_INFO = F"mtgDB/{MTG_APP_VERSION} ({EMAIL})"
@@ -66,6 +66,10 @@ def push_task_to_cpp(data_list):
     payload = json.dumps(data_list) 
 
     r.lpush("mtgdb_queue", payload)
+
+def build_card_query(cardName, setCode):
+    searchName = cardName.replace(' ', '+')
+    return f"https://api.scryfall.com/cards/named?exact={searchName}&set={setCode}"
 
 def check_for_file(filename):
     filePath = IMAGES_DIR_PATH + filename
@@ -377,18 +381,15 @@ def scryfall_query_card():
     if request.method == 'POST':
         card = {}
 
-        cardName = request.form.get('cardName')
-        sanitizedCardName = re.sub(r'[^a-zA-Z0-9\s]', '', cardName)
-        card['name'] = cardName
-        card['cleanName'] = sanitizedCardName
+        card['name'] = request.form.get('cardName')
+        card['cleanName'] = re.sub(r'[^a-zA-Z0-9\s]', '', card['name'])
         card['set'] = request.form.get('cardSetCode')
         card['quantity'] = request.form.get('cardQuantity')
 
         if not card['name'] or not card['set'] or not card['quantity']:
             return render_template('scryfallcardform.html', check=2, setCodes=setCodes, results="All fields must be filled")
 
-        searchName = sanitizedCardName.replace(' ', '+')
-        url = f"https://api.scryfall.com/cards/named?exact={searchName}&set={card['set']}"
+        url = build_card_query(card['cleanName'], card['set'])
 
         response = {}
 
@@ -486,13 +487,15 @@ def new_deck():
 
         cards = []
         keys = ['type', 'name', 'set', 'amount', 'commander']
-        cards.append('deckCardAdd')
         for line in lines:
             items = BULK_CARD_PATTERN.findall(line)
-            card = list(items[0])
-            card[0] = re.sub(r'[^a-z0-9\s]', '', card[0].lower())
-            push_task_to_cpp(dict(zip(keys, card)))
-            cards.append(dict(zip(keys, card)))
+            card = ['deckCardAdd']
+            card.extend(list(items[0]))
+            dCard = dict(zip(keys, card))
+            dCard['name'] = re.sub(r'[^a-z0-9\s]', '', dCard['name'].lower())
+            dCard['url'] = build_card_query(card['name'], card['set'])
+            push_task_to_cpp(dCard)
+            cards.append(dCard)
 
         errors=cards
 
