@@ -3,8 +3,9 @@
 #include <mutex>
 #include <thread>
 #include <fmt/core.h>
+#include <fmt/chrono.h>
 #include <sw/redis++/redis++.h>
-#include <mariadb-connector-cpp/include/conncpp.hpp>
+#include <mariadb/conncpp.hpp>
 #include <nlohmann/json.hpp>
 
 using TimePoint = std::chrono::steady_clock::time_point;
