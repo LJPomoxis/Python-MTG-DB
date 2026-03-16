@@ -13,6 +13,7 @@ venv/
 mariadb-connector-cpp/
 redis-plus-plus/
 build/
+.vscode/
 
 # Ignore env files, sensitive credentials
 *.env

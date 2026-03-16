@@ -1,0 +1,10 @@
+{
+  "name": "mtg-web-app",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "fmt",
+    "nlohmann-json",
+    "redis-plus-plus",
+    "mariadb-connector-cpp"
+  ]
+}

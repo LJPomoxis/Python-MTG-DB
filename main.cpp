@@ -10,13 +10,6 @@
 using TimePoint = std::chrono::steady_clock::time_point;
 namespace chrono = std::chrono;
 
-/*
-try {
-    using namespace sw::redis;
-    auto redis = Redis("tcp://127.0.0.1:6379");
-}
-*/
-
 class ApiClient {
 private:
     std::mutex api_mutex;
