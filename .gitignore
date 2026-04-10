@@ -5,7 +5,6 @@ __pycache__/
 
 # Ignore scripts directory and shell scripts, personal scripts for db
 scripts/
-bin/
 reload.sh
 
 # Ignore virtual environment, and other libraries
