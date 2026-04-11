@@ -17,7 +17,7 @@ private:
     TimePoint lastCall = chrono::steady_clock::now() - chrono::seconds(1);
     const chrono::milliseconds interval{500};
 public:
-    void wait(std::function<void()> func) {
+    void wait(std::function<void()> run_query) {
         std::lock_guard<std::mutex> lock(api_mutex);
 
         auto now = chrono::steady_clock::now();
@@ -28,7 +28,7 @@ public:
            std::this_thread::sleep_for(interval - elapsed);
         }
 
-        func();
+        run_query();
         lastCall = chrono::steady_clock::now();
     }
 };
