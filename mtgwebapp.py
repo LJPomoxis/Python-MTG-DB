@@ -11,11 +11,11 @@ import json
 import redis
 
 """
-If changes are made to create user based system, SQL queries and function calls need
+If changes are made to create user based system, SQL queries need
 to be refactored to prevent race conditions
 """
 
-r = redis.Redis(host='localhost', port=6379, db=0)
+red = redis.Redis(host='localhost', port=6379, db=0)
 
 app = Flask(__name__)
 
@@ -65,7 +65,7 @@ def get_db():
 def push_task_to_cpp(data_list):
     payload = json.dumps(data_list) 
 
-    r.lpush("mtgdb_queue", payload)
+    red.lpush("mtgdb_queue", payload)
 
 def build_card_query(cardName, setCode):
     searchName = cardName.replace(' ', '+')
