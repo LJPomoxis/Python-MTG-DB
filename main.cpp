@@ -7,6 +7,9 @@
 #include <sw/redis++/redis++.h>
 #include <mariadb/conncpp.hpp>
 #include <nlohmann/json.hpp>
+#include <curlpp/cURLpp.hpp>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Option.hpp>
 
 using TimePoint = std::chrono::steady_clock::time_point;
 using json = nlohmann::json;

@@ -5,6 +5,7 @@
     "fmt",
     "nlohmann-json",
     "redis-plus-plus",
-    "mariadb-connector-cpp"
+    "mariadb-connector-cpp",
+    "curlpp"
   ]
 }
