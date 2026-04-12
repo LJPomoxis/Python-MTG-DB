@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <mutex>
 #include <thread>
@@ -9,17 +10,19 @@
 #include <nlohmann/json.hpp>
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
-#include <curlpp/Option.hpp>
+#include <curlpp/Options.hpp>
 
 using TimePoint = std::chrono::steady_clock::time_point;
 using json = nlohmann::json;
 namespace chrono = std::chrono;
 
+const std::string VERSION = "0.1.0";
+
 class ApiClient {
 private:
     std::mutex api_mutex;
     TimePoint lastCall = chrono::steady_clock::now() - chrono::seconds(1);
-    const chrono::milliseconds interval{5000};
+    const chrono::milliseconds interval{500};
 public:
     void wait(std::function<void()> run_query) {
         std::lock_guard<std::mutex> lock(api_mutex);
@@ -40,33 +43,38 @@ public:
 std::string i_to_str(int num);
 void log_info(const std::string& message);
 void log_error(const std::string& message);
-void worker_thread(ApiClient& client, std::string query);
-void query_scryfall(std::string query);
+void worker_thread(ApiClient& client, std::string query, const std::list<std::string> &header);
+void query_scryfall(std::string query, const std::list<std::string> &header);
 void batch_tasks(std::vector<json> &jsonList);
+std::string email_from_env(std::string path);
+void format_header(std::list<std::string> &header, std::string email);
 
 int main() {
     // Will also need to handle other async tasks with new threads
     // ensure api query function is atomic to respect rate limit for scryfall
+    std::list<std::string> header;
+    format_header(header, email_from_env("/var/www/mtgwebapp/.env"));
     while (true) {
-    ApiClient GlobalClient;
+        ApiClient GlobalClient;
 
-    std::vector<json> jsonList;
-    batch_tasks(jsonList);
+        std::vector<json> jsonList;
+        batch_tasks(jsonList);
 
-    if (jsonList.empty()) {
-        log_error("Redis failure");
-        return 1;
-    }
+        if (jsonList.empty()) {
+            log_error("Redis failure");
+            return 1;
+        }
 
-    std::vector<std::thread> threads;
+        std::vector<std::thread> threads;
 
-    for (size_t i=0; i < jsonList.size(); ++i) {
-        std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
-        log_info(iterMsg);
-        threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"]);
-    }
+        for (size_t i=0; i < jsonList.size(); ++i) {
+            std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
+            log_info(iterMsg);
+            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], header);
+        }
 
-    for(auto& t : threads) t.join();
+        for(auto& t : threads) t.join();
+        log_info("Batch Completed");
     }
     return 0;
 }
@@ -97,15 +105,27 @@ void log_error(const std::string& message) {
     std::cerr << fmt::format("[ERROR] {:%F %T} - {}\n", now, message);
 }
 
-void worker_thread(ApiClient& client, std::string query) {
+void worker_thread(ApiClient& client, std::string query, const std::list<std::string> &header) {
     client.wait([&]() {
-        query_scryfall(query);
+        query_scryfall(query, header);
     });
 }
 
-void query_scryfall(std::string query) {
+void query_scryfall(std::string query, const std::list<std::string> &header) {
     std::string result = "Running query: " + query;
     log_info(result);
+
+    try {
+        curlpp::Cleanup cleaner;
+        curlpp::Easy request;
+
+        request.setOpt(new curlpp::options::Url(query));
+        request.perform();
+    } catch (curlpp::RuntimeError & e) {
+        log_error(e.what());
+    } catch (curlpp::LogicError &e) {
+        log_error(e.what());
+    }
 }
 
 void batch_tasks(std::vector<json> &jsonList) {
@@ -134,4 +154,38 @@ void batch_tasks(std::vector<json> &jsonList) {
         std::cerr << "Redis error: " << e.what() << std::endl;
         return;
     }
+}
+
+std::string email_from_env(std::string path) {
+    std::ifstream envFile;
+    envFile.open(path);
+    if (!envFile.is_open()) {
+        log_error("Failed to open env file");
+    }
+    std::string buf;
+    while (std::getline(envFile, buf)) { 
+        //log_info(buf); 
+    }
+    envFile.close();
+
+    char tmp;
+    std::string email;
+    int position = 0;
+    while (buf[position] != '\"') position++;
+
+    position++;
+    while (buf[position] != '\"') {
+        email += buf[position];
+        position++;
+    }
+
+    return email;
+}
+
+void format_header(std::list<std::string> &header, std::string email) {
+    std::string headerLine = fmt::format("User-Agent: mtgDBManagerScript/{} ({})", email, VERSION);
+    header.push_back(headerLine);
+    std::string lineTwo = "Accept: application/json";
+    header.push_back(lineTwo);
+    //for (const auto& line : header) { log_info(line); }
 }
