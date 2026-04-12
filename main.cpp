@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 
 using TimePoint = std::chrono::steady_clock::time_point;
+using json = nlohmann::json;
 namespace chrono = std::chrono;
 
 class ApiClient {
@@ -38,34 +39,28 @@ void log_info(const std::string& message);
 void log_error(const std::string& message);
 void worker_thread(ApiClient& client, std::string query);
 void query_scryfall(std::string query);
+void batch_tasks(std::vector<json> &jsonList);
 
 int main() {
-    using namespace sw::redis;
-    try {
-        auto redis = Redis("tcp://127.0.0.1:6379");
-    } catch (const Error &e) {
-        // Connection error
-        std::cout << &e << std::endl;
-    }
-    using namespace std;
-    // loop and check redis queue
-
-    // after intake number met or time increment, execute api query and put results in database
-
     // Will also need to handle other async tasks with new threads
     // ensure api query function is atomic to respect rate limit for scryfall
-
     ApiClient GlobalClient;
     bool test = true;
 
-    while(test) {
-        vector<thread> threads;
+    std::vector<json> jsonList;
+    batch_tasks(jsonList);
 
-        string query = "example query";
-        for(int i=0; i < 5; i++) {
+    if (jsonList.empty()) {
+        return 1;
+    }
+
+    while(test) {
+        std::vector<std::thread> threads;
+
+        for (size_t i=0; i < jsonList.size(); ++i) {
             std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
             log_info(iterMsg);
-            threads.emplace_back(worker_thread, ref(GlobalClient), query);
+            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"]);
         }
 
         for(auto& t : threads) t.join();
@@ -74,7 +69,7 @@ int main() {
     return 0;
 }
 
-std::string i_to_str(int num) {
+std::string i_to_str(int num) { // Assumes int < 100
     std::string strNum = "00";
     char charNum = '0';
     if (num > 9) {
@@ -89,7 +84,7 @@ std::string i_to_str(int num) {
     return strNum;
 }
 
-void log_info(const std::string& message) {
+void log_info(const std::string& message) { // thread safe logging, prints log as one line
     auto now = chrono::system_clock::now();
     std::cout << fmt::format("[INFO] {:%F %T} - {}\n", now, message);
 }
@@ -109,4 +104,36 @@ void worker_thread(ApiClient& client, std::string query) {
 void query_scryfall(std::string query) {
     std::string result = "Trying: " + query;
     log_info(result);
+}
+
+void batch_tasks(std::vector<json> &jsonList) {
+    using namespace sw::redis;
+    try {
+        auto redis = Redis("tcp://127.0.0.1:6379");
+
+        auto task = redis.brpop("mtgdb_queue", 0);
+        json data = json::parse(task->second);
+
+        const chrono::seconds timeOut{10}; // arbitrary value, tweak as needed
+        auto start = chrono::steady_clock::now();
+        auto check = chrono::steady_clock::now();
+
+        auto elapsed = chrono::duration_cast<chrono::milliseconds>(start - check);
+
+        size_t targetSize = 10;
+        while (elapsed < timeOut || jsonList.size() < targetSize) {
+            check = chrono::steady_clock::now();
+            elapsed = chrono::duration_cast<chrono::milliseconds>(start - check);
+
+            auto task = redis.brpop("mtgdb_queue", 1);
+            if (task) {
+                json data = json::parse(task->second);
+                jsonList.emplace_back(data);
+            }
+        }
+    } catch (const Error &e) {
+        // Connection error
+        std::cerr << "Redis error: " << e.what() << std::endl;
+        return;
+    }
 }
