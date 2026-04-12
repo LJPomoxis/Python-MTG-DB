@@ -66,10 +66,7 @@ int main() {
         }
 
         std::vector<std::thread> threads;
-
         for (size_t i=0; i < jsonList.size(); ++i) {
-            std::string iterMsg = fmt::format("Thread {} starting", i_to_str(i));
-            log_info(iterMsg);
             threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], header);
         }
 
@@ -120,6 +117,7 @@ void query_scryfall(std::string query, const std::list<std::string> &header) {
         curlpp::Easy request;
 
         request.setOpt(new curlpp::options::Url(query));
+        request.setOpt(new curlpp::options::HttpHeader(header));
         request.perform();
     } catch (curlpp::RuntimeError & e) {
         log_error(e.what());
