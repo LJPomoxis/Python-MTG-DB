@@ -24,20 +24,7 @@ private:
     TimePoint lastCall = chrono::steady_clock::now() - chrono::seconds(1);
     const chrono::milliseconds interval{500};
 public:
-    void wait(std::function<void()> run_query) {
-        std::lock_guard<std::mutex> lock(api_mutex);
-
-        auto now = chrono::steady_clock::now();
-        auto elapsed = chrono::duration_cast<chrono::milliseconds>(now - lastCall);
-
-        if(elapsed < interval) {
-            // wait out remainder of timer
-           std::this_thread::sleep_for(interval - elapsed);
-        }
-
-        run_query();
-        lastCall = chrono::steady_clock::now();
-    }
+    void wait(std::function<void()> run_query);
 };
 
 std::string i_to_str(int num);
@@ -75,6 +62,21 @@ int main() {
     }
     return 0;
 }
+
+void ApiClient::wait(std::function<void()> run_query) {
+        std::lock_guard<std::mutex> lock(api_mutex);
+
+        auto now = chrono::steady_clock::now();
+        auto elapsed = chrono::duration_cast<chrono::milliseconds>(now - lastCall);
+
+        if(elapsed < interval) {
+            // wait out remainder of timer
+           std::this_thread::sleep_for(interval - elapsed);
+        }
+
+        run_query();
+        lastCall = chrono::steady_clock::now();
+    }
 
 std::string i_to_str(int num) { // Assumes int < 100
     std::string strNum = "00";
