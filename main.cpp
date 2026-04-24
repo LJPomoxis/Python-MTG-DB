@@ -8,9 +8,6 @@
 #include <sw/redis++/redis++.h>
 #include <mariadb/conncpp.hpp>
 #include <nlohmann/json.hpp>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
 #include <cpr/cpr.h>
 
 using TimePoint = std::chrono::steady_clock::time_point;
@@ -31,17 +28,17 @@ public:
 std::string i_to_str(int num);
 void log_info(const std::string& message);
 void log_error(const std::string& message);
-void worker_thread(ApiClient& client, std::string query, const std::list<std::string> &header);
-void query_scryfall(std::string query, const std::list<std::string> &header);
+void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers);
+void query_scryfall(std::string query, const cpr::Header &headers);
 void batch_tasks(std::vector<json> &jsonList);
 std::string email_from_env(std::string path);
-void format_header(std::list<std::string> &header, std::string email);
+cpr::Header format_header(std::string email);
 
 int main() {
     // Will also need to handle other async tasks with new threads
     // ensure api query function is atomic to respect rate limit for scryfall
-    std::list<std::string> header;
-    format_header(header, email_from_env("/var/www/mtgwebapp/.env"));
+    cpr::Header headers;
+    headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
     while (true) {
         ApiClient GlobalClient;
 
@@ -55,7 +52,7 @@ int main() {
 
         std::vector<std::thread> threads;
         for (size_t i=0; i < jsonList.size(); ++i) {
-            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], header);
+            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], headers);
         }
 
         for(auto& t : threads) t.join();
@@ -105,28 +102,21 @@ void log_error(const std::string& message) {
     std::cerr << fmt::format("[ERROR] {:%F %T} - {}\n", now, message);
 }
 
-void worker_thread(ApiClient& client, std::string query, const std::list<std::string> &header) {
+void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers) {
     client.wait([&]() {
-        query_scryfall(query, header);
+        query_scryfall(query, headers);
     });
 }
 
-void query_scryfall(std::string query, const std::list<std::string> &header) {
-    std::string result = "Running query: " + query;
-    log_info(result);
+void query_scryfall(std::string query, const cpr::Header &headers) {
+    std::string test = "Running query: " + query;
+    log_info(test);
 
-    try {
-        curlpp::Cleanup cleaner;
-        curlpp::Easy request;
+    cpr::Response response = cpr::Get(cpr::Url{query},
+                                cpr::Header{headers});
 
-        request.setOpt(new curlpp::options::Url(query));
-        request.setOpt(new curlpp::options::HttpHeader(header));
-        request.perform();
-    } catch (curlpp::RuntimeError & e) {
-        log_error(e.what());
-    } catch (curlpp::LogicError &e) {
-        log_error(e.what());
-    }
+    //std::cout << response.url << std::endl;
+    std::cout << response.text << std::endl;
 }
 
 void batch_tasks(std::vector<json> &jsonList) {
@@ -183,10 +173,13 @@ std::string email_from_env(std::string path) {
     return email;
 }
 
-void format_header(std::list<std::string> &header, std::string email) {
-    std::string headerLine = fmt::format("User-Agent: mtgDBManagerScript/{} ({})", email, VERSION);
-    header.push_back(headerLine);
-    std::string lineTwo = "Accept: application/json";
-    header.push_back(lineTwo);
-    //for (const auto& line : header) { log_info(line); }
+cpr::Header format_header(std::string email) {
+    cpr::Header headers;
+
+    std::string userAgent = fmt::format("mtgDBManagerScript/{} ({})", email, VERSION);
+    headers["User-Agent"] = userAgent;
+    std::string accpt = "application/json";
+    headers["Accept"] = accpt;
+
+    return headers;
 }
