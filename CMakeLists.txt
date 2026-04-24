@@ -15,6 +15,7 @@ find_package(unofficial-mariadb-connector-cpp CONFIG REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(unofficial-curlpp CONFIG REQUIRED)
+find_package(cpr CONFIG REQUIRED)
 
 add_executable(MTGWebApp main.cpp)
 
@@ -27,4 +28,5 @@ target_link_libraries(MTGWebApp
         unofficial::mariadb-connector-cpp::mariadbcpp
         Threads::Threads
         unofficial::curlpp::curlpp
+        cpr::cpr
 )

@@ -11,6 +11,7 @@
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
+#include <cpr/cpr.h>
 
 using TimePoint = std::chrono::steady_clock::time_point;
 using json = nlohmann::json;

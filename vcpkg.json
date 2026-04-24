@@ -6,6 +6,7 @@
     "nlohmann-json",
     "redis-plus-plus",
     "mariadb-connector-cpp",
-    "curlpp"
+    "curlpp",
+    "cpr"
   ]
 }
