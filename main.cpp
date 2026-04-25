@@ -15,24 +15,34 @@ using json = nlohmann::json;
 namespace chrono = std::chrono;
 
 const std::string VERSION = "0.1.0";
+std::mutex resultMutex;
+std::map<std::string, std::string> queryReuslts;
 
 class ApiClient {
 private:
-    std::mutex api_mutex;
+    std::mutex apiMutex;
     TimePoint lastCall = chrono::steady_clock::now() - chrono::seconds(1);
     const chrono::milliseconds interval{500};
 public:
     void wait(std::function<void()> run_query);
 };
 
+class DatabaseWriter {
+private:
+    std::mutex dbMutex;
+public:
+    void db_write();
+};
+
 std::string i_to_str(int num);
 void log_info(const std::string& message);
 void log_error(const std::string& message);
 void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers);
-void query_scryfall(std::string query, const cpr::Header &headers);
+std::string query_scryfall(std::string query, const cpr::Header &headers);
 void batch_tasks(std::vector<json> &jsonList);
 std::string email_from_env(std::string path);
 cpr::Header format_header(std::string email);
+void processResponse(const std::vector<json> &jsonList);
 
 int main() {
     // Will also need to handle other async tasks with new threads
@@ -52,29 +62,36 @@ int main() {
 
         std::vector<std::thread> threads;
         for (size_t i=0; i < jsonList.size(); ++i) {
-            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], headers);
+            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], std::ref(headers));
         }
 
         for(auto& t : threads) t.join();
         log_info("Batch Completed");
+
+        processResponse(jsonList);
     }
     return 0;
 }
 
 void ApiClient::wait(std::function<void()> run_query) {
-        std::lock_guard<std::mutex> lock(api_mutex);
+    {
+        std::lock_guard<std::mutex> lock(apiMutex);
 
         auto now = chrono::steady_clock::now();
         auto elapsed = chrono::duration_cast<chrono::milliseconds>(now - lastCall);
 
         if(elapsed < interval) {
             // wait out remainder of timer
-           std::this_thread::sleep_for(interval - elapsed);
+            std::this_thread::sleep_for(interval - elapsed);
         }
-
-        run_query();
         lastCall = chrono::steady_clock::now();
     }
+    run_query();
+}
+
+void DatabaseWriter::db_write() {
+
+}
 
 std::string i_to_str(int num) { // Assumes int < 100
     std::string strNum = "00";
@@ -104,11 +121,14 @@ void log_error(const std::string& message) {
 
 void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers) {
     client.wait([&]() {
-        query_scryfall(query, headers);
+        std::string result = query_scryfall(query, headers);
+
+        std::lock_guard<std::mutex> lock(resultMutex);
+        queryReuslts[query] = result;
     });
 }
 
-void query_scryfall(std::string query, const cpr::Header &headers) {
+std::string query_scryfall(std::string query, const cpr::Header &headers) {
     std::string test = "Running query: " + query;
     log_info(test);
 
@@ -116,7 +136,11 @@ void query_scryfall(std::string query, const cpr::Header &headers) {
                                 cpr::Header{headers});
 
     //std::cout << response.url << std::endl;
-    std::cout << response.text << std::endl;
+    //std::cout << response.text << std::endl;
+
+    json results = json::parse(response.text);
+    
+    return response.text;
 }
 
 void batch_tasks(std::vector<json> &jsonList) {
@@ -182,4 +206,12 @@ cpr::Header format_header(std::string email) {
     headers["Accept"] = accpt;
 
     return headers;
+}
+
+void processResponse(const std::vector<json> &jsonList) {
+    for (size_t i=0; i < jsonList.size(); ++i) {
+        std::string query = queryReuslts[jsonList[i]["url"]];
+        json tempResponse = json::parse(query);
+        log_info(tempResponse["name"]);
+    }
 }
