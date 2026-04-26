@@ -15,8 +15,7 @@ using json = nlohmann::json;
 namespace chrono = std::chrono;
 
 const std::string VERSION = "0.1.0";
-std::mutex resultMutex;
-std::map<std::string, std::string> queryReuslts;
+std::mutex tmpMutex;
 
 class ApiClient {
 private:
@@ -43,7 +42,7 @@ std::string query_scryfall(std::string query, const cpr::Header &headers);
 void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis);
 std::string email_from_env(std::string path);
 cpr::Header format_header(std::string email);
-void processResponse(const std::vector<json> &jsonList);
+void processResult(const std::string &result);
 
 int main() {
     try {
@@ -78,8 +77,6 @@ void DatabaseWriter::db_write() {
 }
 
 void app_loop(sw::redis::Redis &redis) {
-    // Will also need to handle other async tasks with new threads
-    // ensure api query function is atomic to respect rate limit for scryfall
     cpr::Header headers;
     headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
     while (true) {
@@ -100,8 +97,6 @@ void app_loop(sw::redis::Redis &redis) {
 
         for(auto& t : threads) t.join();
         log_info("Batch Completed");
-
-        processResponse(jsonList);
     }
 }
 
@@ -132,12 +127,25 @@ void log_error(const std::string& message) {
 }
 
 void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers) {
+    std::string result;
     client.wait([&]() {
-        std::string result = query_scryfall(query, headers);
-
-        std::lock_guard<std::mutex> lock(resultMutex);
-        queryReuslts[query] = result;
+        result = query_scryfall(query, headers);
     });
+
+    // Parse query result into json
+    json parsedResult = json::parse(result);
+    log_info(parsedResult["name"]);
+
+    // donwload file
+    std::string fileEndpoint = parsedResult["image_uris"]["normal"]; // Might not be normal, double check python
+
+    // Do download
+
+    // DB write
+    {
+        std::lock_guard<std::mutex> lock(tmpMutex);
+        // call function and pass json?
+    }
 }
 
 std::string query_scryfall(std::string query, const cpr::Header &headers) {
@@ -208,10 +216,7 @@ cpr::Header format_header(std::string email) {
     return headers;
 }
 
-void processResponse(const std::vector<json> &jsonList) {
-    for (size_t i=0; i < jsonList.size(); ++i) {
-        std::string query = queryReuslts[jsonList[i]["url"]];
-        json tempResponse = json::parse(query);
-        log_info(tempResponse["name"]);
-    }
+void processResult(const std::string &result) {
+    json parsedResult = json::parse(result);
+    log_info(parsedResult["name"]);
 }
