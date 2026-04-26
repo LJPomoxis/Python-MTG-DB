@@ -34,41 +34,25 @@ public:
     void db_write();
 };
 
+void app_loop(sw::redis::Redis &redis);
 std::string i_to_str(int num);
 void log_info(const std::string& message);
 void log_error(const std::string& message);
 void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers);
 std::string query_scryfall(std::string query, const cpr::Header &headers);
-void batch_tasks(std::vector<json> &jsonList);
+void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis);
 std::string email_from_env(std::string path);
 cpr::Header format_header(std::string email);
 void processResponse(const std::vector<json> &jsonList);
 
 int main() {
-    // Will also need to handle other async tasks with new threads
-    // ensure api query function is atomic to respect rate limit for scryfall
-    cpr::Header headers;
-    headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
-    while (true) {
-        ApiClient GlobalClient;
-
-        std::vector<json> jsonList;
-        batch_tasks(jsonList);
-
-        if (jsonList.empty()) {
-            log_error("Redis failure");
-            return 1;
-        }
-
-        std::vector<std::thread> threads;
-        for (size_t i=0; i < jsonList.size(); ++i) {
-            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], std::ref(headers));
-        }
-
-        for(auto& t : threads) t.join();
-        log_info("Batch Completed");
-
-        processResponse(jsonList);
+    try {
+        sw::redis::Redis redis("tcp://127.0.0.1:6379");
+        app_loop(redis);
+    } catch (const sw::redis::Error &e) {
+        // Connection error
+        std::cerr << "Redis error: " << e.what() << std::endl;
+        return 1;
     }
     return 0;
 }
@@ -91,6 +75,34 @@ void ApiClient::wait(std::function<void()> run_query) {
 
 void DatabaseWriter::db_write() {
 
+}
+
+void app_loop(sw::redis::Redis &redis) {
+    // Will also need to handle other async tasks with new threads
+    // ensure api query function is atomic to respect rate limit for scryfall
+    cpr::Header headers;
+    headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
+    while (true) {
+        ApiClient GlobalClient;
+
+        std::vector<json> jsonList;
+        batch_tasks(jsonList, redis);
+
+        if (jsonList.empty()) {
+            log_error("Redis failure");
+            return;
+        }
+
+        std::vector<std::thread> threads;
+        for (size_t i=0; i < jsonList.size(); ++i) {
+            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], std::ref(headers));
+        }
+
+        for(auto& t : threads) t.join();
+        log_info("Batch Completed");
+
+        processResponse(jsonList);
+    }
 }
 
 std::string i_to_str(int num) { // Assumes int < 100
@@ -135,39 +147,27 @@ std::string query_scryfall(std::string query, const cpr::Header &headers) {
     cpr::Response response = cpr::Get(cpr::Url{query},
                                 cpr::Header{headers});
 
-    //std::cout << response.url << std::endl;
-    //std::cout << response.text << std::endl;
-
     json results = json::parse(response.text);
     
     return response.text;
 }
 
-void batch_tasks(std::vector<json> &jsonList) {
-    using namespace sw::redis;
-    try {
-        auto redis = Redis("tcp://127.0.0.1:6379");
+void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis) {
+    auto task = redis.brpop("mtgdb_queue", 0);
+    json data = json::parse(task->second);
+    jsonList.push_back(data);
+    log_info("Got initial redis task");
 
-        auto task = redis.brpop("mtgdb_queue", 0);
-        json data = json::parse(task->second);
-        jsonList.push_back(data);
-        log_info("Got initial redis task");
+    const chrono::seconds timeOut{8}; // arbitrary value, tweak as needed
+    auto start = chrono::steady_clock::now();
 
-        const chrono::seconds timeOut{8}; // arbitrary value, tweak as needed
-        auto start = chrono::steady_clock::now();
-
-        size_t targetSize = 5;
-        while (chrono::steady_clock::now() - start < timeOut && jsonList.size() < targetSize) {
-            auto next_task = redis.rpop("mtgdb_queue");
-            if (next_task) {
-                json data = json::parse(*next_task);
-                jsonList.push_back(data);
-            }
+    size_t targetSize = 5;
+    while (chrono::steady_clock::now() - start < timeOut && jsonList.size() < targetSize) {
+        auto next_task = redis.rpop("mtgdb_queue");
+        if (next_task) {
+            json data = json::parse(*next_task);
+            jsonList.push_back(data);
         }
-    } catch (const Error &e) {
-        // Connection error
-        std::cerr << "Redis error: " << e.what() << std::endl;
-        return;
     }
 }
 
