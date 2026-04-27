@@ -15,7 +15,6 @@ using json = nlohmann::json;
 namespace chrono = std::chrono;
 
 const std::string VERSION = "0.1.0";
-std::mutex tmpMutex;
 
 class ApiClient {
 private:
@@ -23,7 +22,7 @@ private:
     TimePoint lastCall = chrono::steady_clock::now() - chrono::seconds(1);
     const chrono::milliseconds interval{500};
 public:
-    void wait(std::function<void()> run_query);
+    void apiWait(std::function<void()> run_query);
 };
 
 class DatabaseWriter {
@@ -33,11 +32,26 @@ public:
     void db_write();
 };
 
-void app_loop(sw::redis::Redis &redis);
+struct AppContext {
+    sw::redis::Redis redis;
+    ApiClient globalClient;
+    DatabaseWriter globalDBWriter;
+
+    AppContext (const std::string &uri) 
+    try : redis(uri) {
+        // Constructor body
+    }
+    catch (const sw::redis::Error &e) {
+        std::cerr << "Redis error: " << e.what() << std::endl;
+        throw;
+    }
+};
+
+void app_loop(AppContext &app);
 std::string i_to_str(int num);
 void log_info(const std::string& message);
 void log_error(const std::string& message);
-void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers);
+void worker_thread(AppContext& app, std::string query, const cpr::Header &headers);
 std::string query_scryfall(std::string query, const cpr::Header &headers);
 void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis);
 std::string email_from_env(std::string path);
@@ -46,17 +60,17 @@ void processResult(const std::string &result);
 
 int main() {
     try {
-        sw::redis::Redis redis("tcp://127.0.0.1:6379");
-        app_loop(redis);
-    } catch (const sw::redis::Error &e) {
+        AppContext app("tcp://127.0.0.1:6379");
+        app_loop(app);
+    } catch (const std::exception &e) {
         // Connection error
-        std::cerr << "Redis error: " << e.what() << std::endl;
+        std::cerr << "Fatal connection error: " << e.what() << std::endl;
         return 1;
     }
     return 0;
 }
 
-void ApiClient::wait(std::function<void()> run_query) {
+void ApiClient::apiWait(std::function<void()> run_query) {
     {
         std::lock_guard<std::mutex> lock(apiMutex);
 
@@ -73,17 +87,21 @@ void ApiClient::wait(std::function<void()> run_query) {
 }
 
 void DatabaseWriter::db_write() {
+    // Read needed data
 
+    // lock thread
+    std::lock_guard<std::mutex> lock(dbMutex);
+
+    // write to DB
 }
 
-void app_loop(sw::redis::Redis &redis) {
+void app_loop(AppContext &app) {
     cpr::Header headers;
     headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
     while (true) {
-        ApiClient GlobalClient;
 
         std::vector<json> jsonList;
-        batch_tasks(jsonList, redis);
+        batch_tasks(jsonList, app.redis);
 
         if (jsonList.empty()) {
             log_error("Redis failure");
@@ -92,7 +110,7 @@ void app_loop(sw::redis::Redis &redis) {
 
         std::vector<std::thread> threads;
         for (size_t i=0; i < jsonList.size(); ++i) {
-            threads.emplace_back(worker_thread, std::ref(GlobalClient), jsonList[i]["url"], std::ref(headers));
+            threads.emplace_back(worker_thread, std::ref(app), jsonList[i]["url"], std::ref(headers));
         }
 
         for(auto& t : threads) t.join();
@@ -126,9 +144,9 @@ void log_error(const std::string& message) {
     std::cerr << fmt::format("[ERROR] {:%F %T} - {}\n", now, message);
 }
 
-void worker_thread(ApiClient& client, std::string query, const cpr::Header &headers) {
+void worker_thread(AppContext &app, std::string query, const cpr::Header &headers) {
     std::string result;
-    client.wait([&]() {
+    app.globalClient.apiWait([&]() {
         result = query_scryfall(query, headers);
     });
 
@@ -143,8 +161,7 @@ void worker_thread(ApiClient& client, std::string query, const cpr::Header &head
 
     // DB write
     {
-        std::lock_guard<std::mutex> lock(tmpMutex);
-        // call function and pass json?
+        // call function and pass &json?
     }
 }
 
