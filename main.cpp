@@ -71,6 +71,7 @@ int main() {
 }
 
 void ApiClient::apiWait(std::function<void()> run_query) {
+    // Block scope to enforce timing on API calls
     {
         std::lock_guard<std::mutex> lock(apiMutex);
 
@@ -118,18 +119,26 @@ void app_loop(AppContext &app) {
     }
 }
 
-std::string i_to_str(int num) { // Assumes int < 100
-    std::string strNum = "00";
+std::string i_to_str(int num) {
+    std::string strNum;
+    strNum.reserve(11); // reserving 10 digits worth of space for int value
     char charNum = '0';
-    if (num > 9) {
-        char top = '0' + (num / 10);
-        char bottom = '0' + (num % 10);
-        strNum[0] = top;
-        strNum[1] = bottom;
-    } else {
-        charNum += num;
-        strNum = charNum;
+
+    int sizeCheck = num;
+    int numSize = 1; // number of digits in input decimal number
+    while (sizeCheck > 10) {
+        sizeCheck /= 10;
+        numSize++;
     }
+
+    // mod num to isolate lowest digit and concat to strNum, divide by 10 to asr num
+    for (int i=0; i < numSize; ++i) {
+        strNum += ('0' + (num % 10));
+        num /= 10;
+    }
+
+    // Reverse string to put digit sequence back in order
+    std::reverse(strNum.begin(), strNum.end());
     return strNum;
 }
 
