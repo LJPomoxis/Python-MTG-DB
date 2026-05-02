@@ -27,13 +27,16 @@ public:
 
 class DatabaseWriter {
 private:
-    std::mutex dbMutex;
+    std::mutex writeMutex;
+    std::mutex readMutex;
 public:
-    void db_write();
+    std::string db_read(); //Need to return db data, string ret type is a stand in
+    void db_write(const std::string &dbData); //once again this will be data from read, change from string
 };
 
 struct AppContext {
     sw::redis::Redis redis;
+    cpr::Header headers;
     ApiClient globalClient;
     DatabaseWriter globalDBWriter;
 
@@ -47,16 +50,18 @@ struct AppContext {
     }
 };
 
-void app_loop(AppContext &app);
+void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
 std::string i_to_str(int num);
-void log_info(const std::string& message);
-void log_error(const std::string& message);
-void worker_thread(AppContext& app, std::string query, const cpr::Header &headers);
-std::string query_scryfall(std::string query, const cpr::Header &headers);
-void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis);
-std::string email_from_env(std::string path);
-cpr::Header format_header(std::string email);
-void processResult(const std::string &result);
+void log_info(const std::string& message); // thread safe logging using stdout
+void log_error(const std::string& message); // thread safe logging using cerr
+void worker_thread(AppContext &app, std::string query); // thread logic
+std::string query_scryfall(std::string query, const cpr::Header &headers); // function for scryfall query
+void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis); // task manager for watching redis and batching tasks taken from redis queue
+std::string email_from_env(std::string path); // pulls email from env file
+cpr::Header format_header(std::string email); // formats headers for scryfall query using email and version number
+void processResult(const std::string &result); // function for parsing and checking queried data
+void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
+void replace_spaces(std::string &cardName);
 
 int main() {
     try {
@@ -87,18 +92,21 @@ void ApiClient::apiWait(std::function<void()> run_query) {
     run_query();
 }
 
-void DatabaseWriter::db_write() {
-    // Read needed data
+std::string DatabaseWriter::db_read() {
+    std::lock_guard<std::mutex> lock(readMutex);
 
+    return "tmp";
+}
+
+void DatabaseWriter::db_write(const std::string &dbData) {
     // lock thread
-    std::lock_guard<std::mutex> lock(dbMutex);
+    std::lock_guard<std::mutex> lock(writeMutex);
 
     // write to DB
 }
 
 void app_loop(AppContext &app) {
-    cpr::Header headers;
-    headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
+    app.headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
     while (true) {
 
         std::vector<json> jsonList;
@@ -111,7 +119,7 @@ void app_loop(AppContext &app) {
 
         std::vector<std::thread> threads;
         for (size_t i=0; i < jsonList.size(); ++i) {
-            threads.emplace_back(worker_thread, std::ref(app), jsonList[i]["url"], std::ref(headers));
+            threads.emplace_back(worker_thread, std::ref(app), jsonList[i]["url"]);
         }
 
         for(auto& t : threads) t.join();
@@ -153,25 +161,39 @@ void log_error(const std::string& message) {
     std::cerr << fmt::format("[ERROR] {:%F %T} - {}\n", now, message);
 }
 
-void worker_thread(AppContext &app, std::string query, const cpr::Header &headers) {
+// This should be changed
+// API query should only trigger after a db read
+// If the db query comes back with nothing, i.e. card dne in db, then api query is a go
+// Otherwise we have all of the data we need in the db and can skip the query
+
+void worker_thread(AppContext &app, std::string query) {
+    // Eventually need to add connection pool for mariaDB, but for testing we'll use mutex
     std::string result;
     app.globalClient.apiWait([&]() {
-        result = query_scryfall(query, headers);
+        result = query_scryfall(query, app.headers);
     });
 
     // Parse query result into json
     json parsedResult = json::parse(result);
-    log_info(parsedResult["name"]);
+    std::string cardName = parsedResult["name"];
+    replace_spaces(cardName);
+    log_info(cardName);
 
     // donwload file
     std::string fileEndpoint = parsedResult["image_uris"]["normal"]; // Might not be normal, double check python
-
-    // Do download
+    log_info(fileEndpoint);
 
     // DB write
     {
         // call function and pass &json?
     }
+
+    // Do download
+    std::string testDir = "/var/www/mtgwebapp/downloadTest/";
+    std::string testFileName = testDir + cardName + ".jpg";
+    // For testing file name is card name, in actual implementation we will need to get card data from DB
+
+    download_card_image(fileEndpoint, testFileName, app.headers);
 }
 
 std::string query_scryfall(std::string query, const cpr::Header &headers) {
@@ -245,4 +267,23 @@ cpr::Header format_header(std::string email) {
 void processResult(const std::string &result) {
     json parsedResult = json::parse(result);
     log_info(parsedResult["name"]);
+}
+
+void download_card_image(const std::string &fileEndpoint, const std::string &fileName, const cpr::Header &headers) {
+    std::ofstream outFile(fileName, std::ios::binary);
+
+    cpr::Response response = cpr::Download(outFile, cpr::Url{fileEndpoint}, headers);
+
+    std::string reponseStatus = "Download http status code: " + response.status_code;
+    log_info(reponseStatus);
+}
+
+void replace_spaces(std::string &cardName) {
+    int i = 0;
+    while (cardName[i] != '\0') {
+        if (cardName[i] == ' ') {
+            cardName[i] = '-';
+        }
+        ++i;
+    }
 }
