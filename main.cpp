@@ -110,10 +110,25 @@ void app_loop(AppContext &app) {
     app.headers = format_header(get_env_var(app.envFilePath, "EMAIL"));
     
     // Instantiate Driver
-    //sql::Driver* driver = sql::mariadb::get_driver_instance();
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // "jdbc:mariadb://localhost/mtgdb" this but take value from env file
-    //sql::SQLString url();
+    // Configure connection
+    std::string db_host = get_env_var(app.envFilePath, "DB_HOST");
+    std::string db_user = get_env_var(app.envFilePath, "DB_USER");
+    std::string db_pass = get_env_var(app.envFilePath, "DB_PASS");
+    std::string db_name = get_env_var(app.envFilePath, "DB_NAME");
+    std::string connStr = "jdbc:mariadb://" + db_host + "/" + db_name + "?sslMode=disable&useTls=false";
+    sql::SQLString url(connStr);
+
+    sql::Properties properties;
+    properties["user"] = sql::SQLString(db_user);
+    properties["password"] = sql::SQLString(db_pass);
+
+    // Establish connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+    // Close connection
+    conn->close();
 
     while (true) {
 
