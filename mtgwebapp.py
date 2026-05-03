@@ -134,7 +134,7 @@ def home():
         fileDownload['url'] = image['url']
         fileDownload['filename'] = filename
         fileDownload['path'] = IMAGES_DIR_PATH
-        fileDownload['header'] = HEADER
+        #fileDownload['header'] = HEADER
         push_task_to_cpp(fileDownload)
         image['local'] = False
 
@@ -485,6 +485,7 @@ def new_deck():
         deckList = request.form.get('deckList')
         lines = deckList.splitlines()
 
+        # This isn't correct, task format needs to be standardized
         cards = []
         keys = ['type', 'name', 'set', 'amount', 'commander']
         for line in lines:
