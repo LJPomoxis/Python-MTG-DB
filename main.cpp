@@ -61,7 +61,7 @@ std::string email_from_env(std::string path); // pulls email from env file
 cpr::Header format_header(std::string email); // formats headers for scryfall query using email and version number
 void processResult(const std::string &result); // function for parsing and checking queried data
 void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
-void replace_spaces(std::string &cardName);
+void replace_char(std::string &cardName, const char checkChar);
 
 int main() {
     try {
@@ -176,7 +176,7 @@ void worker_thread(AppContext &app, std::string query) {
     // Parse query result into json
     json parsedResult = json::parse(result);
     std::string cardName = parsedResult["name"];
-    replace_spaces(cardName);
+    replace_char(cardName, ' ');
     log_info(cardName);
 
     // donwload file
@@ -278,10 +278,10 @@ void download_card_image(const std::string &fileEndpoint, const std::string &fil
     log_info(reponseStatus);
 }
 
-void replace_spaces(std::string &cardName) {
+void replace_char(std::string &cardName, const char checkChar) {
     int i = 0;
     while (cardName[i] != '\0') {
-        if (cardName[i] == ' ') {
+        if (cardName[i] == checkChar) {
             cardName[i] = '-';
         }
         ++i;
