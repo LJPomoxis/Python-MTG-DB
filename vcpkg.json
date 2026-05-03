@@ -1,6 +1,7 @@
 {
   "name": "mtg-web-app",
   "version-string": "0.1.0",
+  "builtin-baseline": "4b77da7fed37817f124936239197833469f1b9a8",
   "dependencies": [
     "fmt",
     "nlohmann-json",
@@ -8,5 +9,12 @@
     "mariadb-connector-cpp",
     "curlpp",
     "cpr"
+  ],
+  "overrides": [
+    {
+      "name": "libmariadb",
+      "version": "3.3.1",
+      "port-version": 4
+    }
   ]
 }
