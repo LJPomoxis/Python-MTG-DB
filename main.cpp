@@ -39,6 +39,7 @@ struct AppContext {
     cpr::Header headers;
     ApiClient globalClient;
     DatabaseWriter globalDBWriter;
+    const std::string envFilePath = "/var/www/mtgwebapp/.env";
 
     AppContext (const std::string &uri) 
     try : redis(uri) {
@@ -57,7 +58,7 @@ void log_error(const std::string& message); // thread safe logging using cerr
 void worker_thread(AppContext &app, std::string query); // thread logic
 std::string query_scryfall(std::string query, const cpr::Header &headers); // function for scryfall query
 void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis); // task manager for watching redis and batching tasks taken from redis queue
-std::string email_from_env(std::string path); // pulls email from env file
+std::string get_env_var(std::string path, std::string varName); // pulls email from env file
 cpr::Header format_header(std::string email); // formats headers for scryfall query using email and version number
 void processResult(const std::string &result); // function for parsing and checking queried data
 void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
@@ -106,7 +107,14 @@ void DatabaseWriter::db_write(const std::string &dbData) {
 }
 
 void app_loop(AppContext &app) {
-    app.headers = format_header(email_from_env("/var/www/mtgwebapp/.env"));
+    app.headers = format_header(get_env_var(app.envFilePath, "EMAIL"));
+    
+    // Instantiate Driver
+    //sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // "jdbc:mariadb://localhost/mtgdb" this but take value from env file
+    //sql::SQLString url();
+
     while (true) {
 
         std::vector<json> jsonList;
@@ -168,10 +176,24 @@ void log_error(const std::string& message) {
 
 void worker_thread(AppContext &app, std::string query) {
     // Eventually need to add connection pool for mariaDB, but for testing we'll use mutex
+
+    // Check DB for card
+
+    // If query comes back empty, query scryfall for card data
     std::string result;
     app.globalClient.apiWait([&]() {
         result = query_scryfall(query, app.headers);
     });
+
+    // Insert scryfall results or update existing fields to DB
+    {
+        // call function and pass &json?
+    }
+
+    // If initial DB query came back empty, query again to get card ID for file write
+    {
+
+    }
 
     // Parse query result into json
     json parsedResult = json::parse(result);
@@ -179,20 +201,16 @@ void worker_thread(AppContext &app, std::string query) {
     replace_char(cardName, ' ');
     log_info(cardName);
 
-    // donwload file
+    // extract card image file endpoint
     std::string fileEndpoint = parsedResult["image_uris"]["normal"]; // Might not be normal, double check python
     log_info(fileEndpoint);
 
-    // DB write
-    {
-        // call function and pass &json?
-    }
-
-    // Do download
+    // construct file path for donwload
+    // this will be changed to "[cardID]-[cardSet].jpg" after db conn is implemented
     std::string testDir = "/var/www/mtgwebapp/downloadTest/";
     std::string testFileName = testDir + cardName + ".jpg";
-    // For testing file name is card name, in actual implementation we will need to get card data from DB
-
+    
+    // Download card image
     download_card_image(fileEndpoint, testFileName, app.headers);
 }
 
@@ -227,30 +245,40 @@ void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis) {
     }
 }
 
-std::string email_from_env(std::string path) {
+std::string get_env_var(std::string path, std::string varName) {
     std::ifstream envFile;
     envFile.open(path);
     if (!envFile.is_open()) {
         log_error("Failed to open env file");
+        return "";
     }
-    std::string buf;
-    while (std::getline(envFile, buf)) { 
-        //log_info(buf); 
+
+    std::string buf, checkVar;
+    int position = 0;
+    int nextPos = 0;
+    while (std::getline(envFile, buf)) {
+        checkVar = "";
+        while (buf[position] != '=') {
+            checkVar += buf[position];
+            position++;
+        }
+        nextPos = position;
+        position = 0;
+
+        if (checkVar == varName) break;
     }
     envFile.close();
+    nextPos++;
 
-    char tmp;
-    std::string email;
-    int position = 0;
-    while (buf[position] != '\"') position++;
-
-    position++;
-    while (buf[position] != '\"') {
-        email += buf[position];
-        position++;
+    std::string varValue;
+    while (buf[nextPos] != '\0') {
+        if (buf[nextPos] == '\"' || buf[nextPos] == '\'') nextPos++;
+        if (buf[nextPos] == '\0') break;
+        varValue += buf[nextPos];
+        nextPos++;
     }
 
-    return email;
+    return varValue;
 }
 
 cpr::Header format_header(std::string email) {
