@@ -1,14 +1,4 @@
 #include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <mutex>
-#include <thread>
-#include <fmt/core.h>
-#include <fmt/chrono.h>
-#include <sw/redis++/redis++.h>
-#include <mariadb/conncpp.hpp>
-#include <nlohmann/json.hpp>
-#include <cpr/cpr.h>
 #include "../include/app.hpp"
 
 int main() {
