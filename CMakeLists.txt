@@ -17,7 +17,14 @@ find_package(Threads REQUIRED)
 find_package(unofficial-curlpp CONFIG REQUIRED)
 find_package(cpr CONFIG REQUIRED)
 
-add_executable(MTGWebApp main.cpp)
+add_executable(MTGWebApp
+    src/main.cpp
+    src/app.cpp 
+    src/utils.cpp 
+    src/requests.cpp
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC "include")
 
 # Link them
 target_link_libraries(MTGWebApp 
