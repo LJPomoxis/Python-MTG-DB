@@ -16,6 +16,17 @@ namespace chrono = std::chrono;
 
 const std::string VERSION = "0.1.0";
 
+std::string i_to_str(int num);
+void log_info(const std::string& message); // thread safe logging using stdout
+void log_error(const std::string& message); // thread safe logging using cerr
+std::string query_scryfall(std::string query, const cpr::Header &headers); // function for scryfall query
+void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis); // task manager for watching redis and batching tasks taken from redis queue
+std::string get_env_var(std::string path, std::string varName); // pulls email from env file
+cpr::Header format_header(std::string email); // formats headers for scryfall query using email and version number
+void process_result(const std::string &result); // function for parsing and checking queried data
+void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
+void replace_char(std::string &cardName, const char checkChar, const char replaceChar);
+
 class ApiClient {
 private:
     std::mutex apiMutex;
@@ -25,48 +36,63 @@ public:
     void apiWait(std::function<void()> run_query);
 };
 
-class DatabaseWriter {
+class DatabaseClient {
 private:
     std::mutex writeMutex;
     std::mutex readMutex;
 public:
-    std::string db_read(); //Need to return db data, string ret type is a stand in
-    void db_write(const std::string &dbData); //once again this will be data from read, change from string
+    std::unique_ptr<sql::ResultSet> db_read();
+    void db_write(const std::string &dbData); //This will be data from read, change from string
+    std::unique_ptr<sql::Connection> get_conn(const std::string &envfile);
+};
+
+struct DatabaseConfig {
+    sql::URL url;
+    sql::Properties properties;
+};
+
+struct AppConfig {
+    std::string redisUri;
+    std::string envFilePath;
+    DatabaseConfig dbCfg;
 };
 
 struct AppContext {
     sw::redis::Redis redis;
+    std::unique_ptr<sql::Connection> conn;
     cpr::Header headers;
     ApiClient globalClient;
-    DatabaseWriter globalDBWriter;
-    const std::string envFilePath = "/var/www/mtgwebapp/.env";
+    DatabaseClient globalDBClient;
+    std::string envFilePath;
 
-    AppContext (const std::string &uri) 
-    try : redis(uri) {
-        // Constructor body
+    AppContext (AppConfig config) 
+    try : redis(config.redisUri),
+          conn(sql::mariadb::get_driver_instance()->connect(config.dbCfg.url, config.dbCfg.properties))
+    {
+        envFilePath = config.envFilePath;
     }
     catch (const sw::redis::Error &e) {
-        std::cerr << "Redis error: " << e.what() << std::endl;
+        std::cerr << "Redis Error: " << e.what() << std::endl;
+        throw;
+    }
+    catch (const sql::SQLException &e) {
+        std::cerr << "Mariadb Error: " << e.what() << std::endl;
         throw;
     }
 };
 
+DatabaseConfig config_db_conn(const std::string &envFilePath);
 void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
-std::string i_to_str(int num);
-void log_info(const std::string& message); // thread safe logging using stdout
-void log_error(const std::string& message); // thread safe logging using cerr
 void worker_thread(AppContext &app, std::string query); // thread logic
-std::string query_scryfall(std::string query, const cpr::Header &headers); // function for scryfall query
-void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis); // task manager for watching redis and batching tasks taken from redis queue
-std::string get_env_var(std::string path, std::string varName); // pulls email from env file
-cpr::Header format_header(std::string email); // formats headers for scryfall query using email and version number
-void processResult(const std::string &result); // function for parsing and checking queried data
-void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
-void replace_char(std::string &cardName, const char checkChar);
 
 int main() {
+    AppConfig appCfg;
+    appCfg.redisUri = "tcp://127.0.0.1:6379";
+    appCfg.envFilePath = "/var/www/mtgwebapp/.env";
+    appCfg.dbCfg = config_db_conn(appCfg.envFilePath);
+
     try {
-        AppContext app("tcp://127.0.0.1:6379");
+        AppContext app(appCfg);
         app_loop(app);
     } catch (const std::exception &e) {
         // Connection error
@@ -93,42 +119,48 @@ void ApiClient::apiWait(std::function<void()> run_query) {
     run_query();
 }
 
-std::string DatabaseWriter::db_read() {
+std::unique_ptr<sql::ResultSet> DatabaseClient::db_read() {
     std::lock_guard<std::mutex> lock(readMutex);
 
-    return "tmp";
+    std::unique_ptr<sql::ResultSet> tmp; //Placeholder to prevent errors
+
+    return tmp;
 }
 
-void DatabaseWriter::db_write(const std::string &dbData) {
+void DatabaseClient::db_write(const std::string &dbData) {
     // lock thread
     std::lock_guard<std::mutex> lock(writeMutex);
 
     // write to DB
 }
 
+DatabaseConfig config_db_conn(const std::string &envFilePath) {
+    std::string db_host = get_env_var(envFilePath, "DB_HOST");
+    std::string db_name = get_env_var(envFilePath, "DB_NAME");
+    std::string db_user = get_env_var(envFilePath, "DB_USER");
+    std::string db_pass = get_env_var(envFilePath, "DB_PASS");
+
+    sql::SQLString url("jdbc:mariadb://" + db_host + "/" + db_name + "?sslMode=disable");
+    sql::Properties properties{{"user", db_user}, {"password", db_pass}};
+
+    return DatabaseConfig{url, properties};
+}
+
 void app_loop(AppContext &app) {
     app.headers = format_header(get_env_var(app.envFilePath, "EMAIL"));
-    
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // Configure connection
-    std::string db_host = get_env_var(app.envFilePath, "DB_HOST");
-    std::string db_user = get_env_var(app.envFilePath, "DB_USER");
-    std::string db_pass = get_env_var(app.envFilePath, "DB_PASS");
-    std::string db_name = get_env_var(app.envFilePath, "DB_NAME");
-    std::string connStr = "jdbc:mariadb://" + db_host + "/" + db_name + "?sslMode=disable&useTls=false";
-    sql::SQLString url(connStr);
+    // Run test
+    std::unique_ptr<sql::Statement> stmt(app.conn->createStatement());
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT * FROM CardAttributes LIMIT 10"));
 
-    sql::Properties properties;
-    properties["user"] = sql::SQLString(db_user);
-    properties["password"] = sql::SQLString(db_pass);
-
-    // Establish connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+    while (res->next()) {
+        std::cout << "cardID: " << res->getInt("cardID") 
+                  << ", Name: " << res->getString("cardName")
+                  << ", CleanName: " << res->getString("cleanCardName") << std::endl;
+    }
 
     // Close connection
-    conn->close();
+    app.conn->close();
 
     while (true) {
 
@@ -184,11 +216,6 @@ void log_error(const std::string& message) {
     std::cerr << fmt::format("[ERROR] {:%F %T} - {}\n", now, message);
 }
 
-// This should be changed
-// API query should only trigger after a db read
-// If the db query comes back with nothing, i.e. card dne in db, then api query is a go
-// Otherwise we have all of the data we need in the db and can skip the query
-
 void worker_thread(AppContext &app, std::string query) {
     // Eventually need to add connection pool for mariaDB, but for testing we'll use mutex
 
@@ -213,7 +240,7 @@ void worker_thread(AppContext &app, std::string query) {
     // Parse query result into json
     json parsedResult = json::parse(result);
     std::string cardName = parsedResult["name"];
-    replace_char(cardName, ' ');
+    replace_char(cardName, ' ', '-');
     log_info(cardName);
 
     // extract card image file endpoint
@@ -307,7 +334,7 @@ cpr::Header format_header(std::string email) {
     return headers;
 }
 
-void processResult(const std::string &result) {
+void process_result(const std::string &result) {
     json parsedResult = json::parse(result);
     log_info(parsedResult["name"]);
 }
@@ -321,11 +348,11 @@ void download_card_image(const std::string &fileEndpoint, const std::string &fil
     log_info(reponseStatus);
 }
 
-void replace_char(std::string &cardName, const char checkChar) {
+void replace_char(std::string &cardName, const char checkChar, const char replaceChar) {
     int i = 0;
     while (cardName[i] != '\0') {
         if (cardName[i] == checkChar) {
-            cardName[i] = '-';
+            cardName[i] = replaceChar;
         }
         ++i;
     }
