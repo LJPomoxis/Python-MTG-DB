@@ -42,7 +42,7 @@ IMAGE_DISPLAY_PATH = "images/cards/"
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
 
 MANA_PATTERN = re.compile(r"\{([^}]+)\}")
-BULK_CARD_PATTERN = re.compile(r"^(.+?)(?:\s+([A-Z]{3}))?(?:\s+x(\d+))?(?:\s+(\*))?$")
+BULK_CARD_PATTERN = re.compile(r"^(.+?)(?:\s+([A-Z]{3,4}))?(?:\s+x?(\d+))?(?:\s+(\*))?$")
 
 app.config['DB_HOST'] = os.getenv('DB_HOST')
 app.config['DB_USER'] = os.getenv('DB_USER')
