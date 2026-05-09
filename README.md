@@ -12,10 +12,14 @@ A custom, self-hosted web application for tracking your Magic: The Gathering car
 
 - Collection Widgets: The homepage features various data insights into the cards in your collection.
 
+- Fast database writes managed through C++ application
+
 ## Tech Stack
 - Backend: Python 3 (Flask)
 
 - WSGI Server: Gunicorn
+
+- DAL: C++ DAL Application
 
 - Database: MariaDB (MySQL)
 
