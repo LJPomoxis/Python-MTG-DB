@@ -1,4 +1,3 @@
-#include <iostream>
 #include "../include/app.hpp"
 
 int main() {

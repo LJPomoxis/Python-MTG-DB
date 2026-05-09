@@ -1,9 +1,6 @@
 # include "../include/app.hpp"
 #include "../include/utils.hpp"
 #include "../include/requests.hpp"
-#include <cpr/cpr.h>
-#include <nlohmann/json.hpp>
-#include <sw/redis++/redis++.h>
 
 namespace app {
 

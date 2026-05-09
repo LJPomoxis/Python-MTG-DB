@@ -1,7 +1,5 @@
 #include "../include/requests.hpp"
 #include "../include/utils.hpp"
-#include <cpr/cpr.h>
-#include <nlohmann/json.hpp>
 #include <fmt/core.h>
 #include <fmt/chrono.h>
 #include <mutex>
