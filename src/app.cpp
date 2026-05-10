@@ -76,6 +76,7 @@ namespace app {
     void app_loop(AppContext &app) {
         app.headers = requests::format_header(utils::get_env_var(app.envFilePath, "EMAIL"));
 
+/*
         std::unique_ptr<sql::Connection> conn(app.get_connection());
 
         // Run test
@@ -87,6 +88,7 @@ namespace app {
                     << ", Name: " << res->getString("cardName")
                     << ", CleanName: " << res->getString("cleanCardName") << std::endl;
         }
+*/
 
         while (true) {
             std::vector<json> jsonList;
@@ -99,7 +101,8 @@ namespace app {
 
             std::vector<std::thread> threads;
             for (size_t i=0; i < jsonList.size(); ++i) {
-                threads.emplace_back(worker_thread, std::ref(app), jsonList[i]["url"]);
+                // using std::ref() instead of std::move() with json due to json object outliving threads
+                threads.emplace_back(worker_thread, std::ref(app), std::ref(jsonList[i]));
             }
 
             for(auto& t : threads) t.join();
@@ -107,13 +110,14 @@ namespace app {
         }
     }
 
-    void worker_thread(AppContext &app, std::string query) {
+    void worker_thread(AppContext &app, const json &taskJson) {
         // Eventually need to add connection pool for mariaDB, but for testing we'll use mutex
 
         // Check DB for card
 
         // If query comes back empty, query scryfall for card data
         std::string result;
+        std::string query = taskJson["url"];
         app.globalClient.apiWait([&]() {
             result = requests::query_scryfall(query, app.headers);
         });

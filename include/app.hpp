@@ -63,6 +63,6 @@ namespace app {
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
     void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
     void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
-    void worker_thread(AppContext &app, std::string query); // thread logic
+    void worker_thread(AppContext &app, const json &taskJson); // thread logic
 
 }
