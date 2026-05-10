@@ -29,6 +29,7 @@ namespace app {
     struct AppConfig {
         std::string redisUri;
         std::string envFilePath;
+        int batchSize;
         DatabaseConfig dbCfg;
     };
 
@@ -39,11 +40,13 @@ namespace app {
         requests::ApiClient globalClient;
         DatabaseClient globalDBClient;
         std::string envFilePath;
+        int batchSize;
 
         AppContext (AppConfig config) 
         try : redis(config.redisUri)
         {
             envFilePath = config.envFilePath;
+            batchSize = config.batchSize;
             dataSource.reset(new sql::mariadb::MariaDbDataSource(config.dbCfg.url));
             dataSource->setUser(config.dbCfg.user);
             dataSource->setPassword(config.dbCfg.password);
@@ -56,8 +59,8 @@ namespace app {
         std::unique_ptr<sql::Connection> get_connection();
     };
 
-    DatabaseConfig config_db_conn(const std::string &envFilePath);
-    void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis); // task manager for watching redis and batching tasks taken from redis queue
+    DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize);
+    void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
     void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
     void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
     void worker_thread(AppContext &app, std::string query); // thread logic

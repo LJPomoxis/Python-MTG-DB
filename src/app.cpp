@@ -1,4 +1,4 @@
-# include "../include/app.hpp"
+#include "../include/app.hpp"
 #include "../include/utils.hpp"
 #include "../include/requests.hpp"
 
@@ -23,11 +23,13 @@ namespace app {
         return std::unique_ptr<sql::Connection>(dataSource->getConnection());
     }
 
-    DatabaseConfig config_db_conn(const std::string &envFilePath) {
+    DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize) {
         std::string db_host = utils::get_env_var(envFilePath, "DB_HOST");
         std::string db_name = utils::get_env_var(envFilePath, "DB_NAME");
         std::string db_user = utils::get_env_var(envFilePath, "DB_USER");
         std::string db_pass = utils::get_env_var(envFilePath, "DB_PASS");
+
+        std::string maxSize = utils::i_to_str(iMaxSize);
 
         sql::SQLString url( "jdbc:mariadb://" + 
                             db_host + 
@@ -36,14 +38,14 @@ namespace app {
                             "?sslMode=disable&" +
                             "tcpKeepAlive=true&" +
                             "minPoolSize=2&" +
-                            "maxPoolSize=10&" +
+                            "maxPoolSize=" + maxSize +"&" +
                             "maxIdleTime=900&" +
                             "poolValidMinDelay=2000");
 
         return DatabaseConfig{url, db_user, db_pass};
     }
 
-    void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis) {
+    void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize) {
         auto task = redis.brpop("mtgdb_queue", 0);
         json data = json::parse(task->second);
         jsonList.push_back(data);
@@ -52,7 +54,7 @@ namespace app {
         const chrono::seconds timeOut{8}; // arbitrary value, tweak as needed
         auto start = chrono::steady_clock::now();
 
-        size_t targetSize = 5;
+        size_t targetSize = batchSize;
         while (chrono::steady_clock::now() - start < timeOut && jsonList.size() < targetSize) {
             auto next_task = redis.rpop("mtgdb_queue");
             if (next_task) {
@@ -87,9 +89,8 @@ namespace app {
         }
 
         while (true) {
-
             std::vector<json> jsonList;
-            batch_tasks(jsonList, app.redis);
+            batch_tasks(jsonList, app.redis, app.batchSize);
 
             if (jsonList.empty()) {
                 utils::log_error("Redis failure");

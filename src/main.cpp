@@ -2,9 +2,10 @@
 
 int main() {
     app::AppConfig appCfg;
+    appCfg.batchSize = 10; // Mariadb conn pools size + num loops for batching function
     appCfg.redisUri = "tcp://127.0.0.1:6379";
     appCfg.envFilePath = "/var/www/mtgwebapp/.env";
-    appCfg.dbCfg = app::config_db_conn(appCfg.envFilePath);
+    appCfg.dbCfg = app::config_db_conn(appCfg.envFilePath, appCfg.batchSize);
 
     try {
         app::AppContext appCtx(appCfg);
