@@ -4,12 +4,62 @@
 
 namespace app {
 
-    std::unique_ptr<sql::ResultSet> DatabaseClient::db_read() {
-        std::lock_guard<std::mutex> lock(readMutex);
+    int DatabaseClient::get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName) {
+        // Check card name against card attribute table to get cardID
 
-        std::unique_ptr<sql::ResultSet> tmp; //Placeholder to prevent errors
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "SELECT cardID FROM CardAttributes WHERE cleanCardName LIKE ?"
+        ));
 
-        return tmp;
+        stmnt->setString(1, cardName);
+
+        std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
+
+        // if !cardID ret -1
+        int cardID = 0;
+        if (res->next()) {
+            cardID = res->getInt("cardID");
+        }
+        
+        return cardID;
+    }
+
+    int DatabaseClient::get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode) {
+        // use setCode to get setID from set table
+        // Should handle error of setCode not being in table, but db should contain all sets
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "SELECT setID FROM SetLookup WHERE setCode LIKE ?"
+        ));
+
+        stmnt->setString(1, setCode);
+        std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
+
+        int setID = 0;
+        if (res->next()) {
+            setID = res->getInt("setID");
+        }
+
+        return setID;
+    }
+
+    int DatabaseClient::get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID) {
+        // Uses setID and cardID to check Collection table for entry
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "SELECT collectionID FROM Collection WHERE cardID = ? AND setID = ?"
+        ));
+
+        stmnt->setInt(1, cardID);
+        stmnt->setInt(2, setID);
+        std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
+
+        int collectionID = 0;
+        if (res->next()) {
+            collectionID = res->getInt("collectionID");
+        }
+
+       return collectionID;
     }
 
     void DatabaseClient::db_write(const std::string &dbData) {
@@ -46,6 +96,8 @@ namespace app {
     }
 
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize) {
+        // Future additions may require this to become non-blocking
+        // This will require rewriting the main loop checks for empty vector
         auto task = redis.brpop("mtgdb_queue", 0);
         json data = json::parse(task->second);
         jsonList.push_back(data);
@@ -76,20 +128,6 @@ namespace app {
     void app_loop(AppContext &app) {
         app.headers = requests::format_header(utils::get_env_var(app.envFilePath, "EMAIL"));
 
-/*
-        std::unique_ptr<sql::Connection> conn(app.get_connection());
-
-        // Run test
-        std::unique_ptr<sql::Statement> stmt(conn->createStatement());
-        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT * FROM CardAttributes LIMIT 10"));
-
-        while (res->next()) {
-            std::cout << "cardID: " << res->getInt("cardID") 
-                    << ", Name: " << res->getString("cardName")
-                    << ", CleanName: " << res->getString("cleanCardName") << std::endl;
-        }
-*/
-
         while (true) {
             std::vector<json> jsonList;
             batch_tasks(jsonList, app.redis, app.batchSize);
@@ -111,25 +149,45 @@ namespace app {
     }
 
     void worker_thread(AppContext &app, const json &taskJson) {
-        // Eventually need to add connection pool for mariaDB, but for testing we'll use mutex
-
         // Check DB for card
+        std::unique_ptr<sql::Connection> conn(app.get_connection());
 
-        // If query comes back empty, query scryfall for card data
-        std::string result;
-        std::string query = taskJson["url"];
-        app.globalClient.apiWait([&]() {
-            result = requests::query_scryfall(query, app.headers);
-        });
+        std::string cardName = taskJson["name"];
+        int cardID = app.globalDBClient.get_cardID(conn, cardName);
 
-        // Insert scryfall results or update existing fields to DB
-        {
-            // call function and pass &json?
+        int collectionID = 0;
+        if (cardID) {
+            std::string setCode = taskJson["setCode"];
+            int setID = app.globalDBClient.get_setID(conn, setCode);
+            if (setID) {
+                collectionID = app.globalDBClient.get_collectionID(conn, setID, cardID);
+            } else {
+                // At some point this should trigger a query/scrape to add new set(s)
+                // Then after new set(s) added, try again
+
+                /*
+                Will need new mutex to lock this down 
+                and ensure that multiple threads do no attempt the same query
+                */
+                std::string error = "set " + setCode + " missing from DB";
+                utils::log_error(error);
+            }
         }
 
-        // If initial DB query came back empty, query again to get card ID for file write
-        {
+        // If query comes back empty, i.e. collectionID == 0, query scryfall for card data
+        std::string result;
+        if (collectionID) {
+            std::string query = taskJson["url"];
+            app.globalClient.apiWait([&]() {
+                result = requests::query_scryfall(query, app.headers);
+            });
 
+            // Add scryfall results to DB
+        } 
+
+        // Update existing fields
+        {
+            // call function and pass &json?
         }
 
         // Parse query result into json

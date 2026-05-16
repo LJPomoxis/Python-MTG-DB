@@ -16,7 +16,9 @@ namespace app {
         std::mutex writeMutex;
         std::mutex readMutex;
     public:
-        std::unique_ptr<sql::ResultSet> db_read();
+        int get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName);
+        int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
+        int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
         void db_write(const std::string &dbData); //This will be data from read, change from string
     };
 
