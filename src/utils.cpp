@@ -13,7 +13,7 @@ namespace utils {
 
         int sizeCheck = num;
         int numSize = 1; // number of digits in input decimal number
-        while (sizeCheck > 10) {
+        while (sizeCheck >= 10) {
             sizeCheck /= 10;
             numSize++;
         }
@@ -26,6 +26,7 @@ namespace utils {
 
         // Reverse string to put digit sequence back in order
         std::reverse(strNum.begin(), strNum.end());
+        //log_info(strNum);
         return strNum;
     }
 
