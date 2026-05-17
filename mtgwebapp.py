@@ -11,8 +11,24 @@ import json
 import redis
 
 """
-If changes are made to create user based system, SQL queries need
-to be refactored to prevent race conditions
+Eventually all CUD operations made to the DB should be shifted onto the cpp program
+Remaining processes to refactor to CPP (DBHF):
+"""
+"""
+- create_new_card
+- add_to_collection
+- add_dfcID
+- add_cardColors
+- add_cardOracle
+- add_cardFlavor
+- get_cardFlavorID
+- add_card_manaVal
+- add_cardPT
+- add_cardImage
+- add_cardType
+- get_cardTypeNumber
+- add_cardKeyword
+- get_cardKeywordID
 """
 
 red = redis.Redis(host='localhost', port=6379, db=0)
