@@ -202,7 +202,7 @@ def search():
         formattedSearch = f'%{cardSearch}%'
 
         # Finish using triple quotes with %s to allow for string insertion
-        query = """"""
+        # query = """"""
 
         cursor.execute("""
             SELECT C.cardID, C.setID, C.quantity, Ca.cardName, Ci.bigImageUrl, COUNT(*) OVER() as totalCount
