@@ -504,8 +504,15 @@ def new_deck():
         deckList = request.form.get('deckList')
         lines = deckList.splitlines()
 
-        # This isn't correct, task format needs to be standardized
         cards = []
+        # newdeck.html will automatically populate 'deckName: ' as the first line
+        # So this will pull that from the list and immediately push it to the CPP program
+        firstLine = lines.pop(0)
+        nameParts = [x.strip() for x in firstLine.split(':')]
+        deckName = {}
+        deckName["deckName"] = nameParts[1]
+        push_task_to_cpp(deckName)
+
         keys = ['type', 'name', 'set', 'amount', 'commander']
         for line in lines:
             items = BULK_CARD_PATTERN.findall(line)
