@@ -30,6 +30,10 @@ A custom, self-hosted web application for tracking your Magic: The Gathering car
 ## Roadmap
 [ ] Advanced Search: Multi-parameter filtering (Color, CMC, Rarity, Power/Toughness).
 
-[ ] Deck Builder: Integrated deck construction that directly uses the collection to asses card availability. I plan to also add a "proxy" feature to this to allow for decks to be built even without all of the necessary cards.
+[ ] Deck Builder: Integrated deck construction that directly uses the collection to asses card availability. Will include the ability to add proxy cards if they do not exist within the collection allowing for better building and testing capabilities.
 
-[ ] Playtest Feature: A undecided scripting language driven playtesting environment for assisting in deck optimization. 
+[ ] Better Deck Builder Formatting: Either refactor formatting to be in line with manabox formatting (Should have checked from the start realistically).
+
+[ ] Playtest Feature: A playtesting environment for playtesting decks built in the web app.
+
+[ ] Refactor Python Database Interaction: Python should be limited to select statements to imporove speed and responsiveness.
