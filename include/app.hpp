@@ -26,7 +26,7 @@ namespace app {
         int get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName);
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
-        int name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
+        void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
         void create_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
     };
