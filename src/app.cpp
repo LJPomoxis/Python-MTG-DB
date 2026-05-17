@@ -62,11 +62,110 @@ namespace app {
        return collectionID;
     }
 
-    void DatabaseClient::db_write(const std::string &dbData) {
-        // lock thread
-        std::lock_guard<std::mutex> lock(writeMutex);
+    int DatabaseClient::get_deckID(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName) {
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "SELECT deckID FROM DeckNameLookup WHERE deckName LIKE ?"
+        ));
 
-        // write to DB
+        stmnt->setString(1, deckName);
+        std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
+
+        int deckID = 1;
+        if (res->next()) {
+            deckID = res->getInt("deckID");
+        }
+
+        return deckID;
+    }
+
+    void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName) {
+        try {
+            std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+                "INSERT INTO DeckNameLookup (deckName) VALUES (?)"
+            ));
+
+            stmnt->setString(1, deckName);
+            stmnt->execute();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            std::ostringstream err;
+            err << "Error naming deck: " << e.what();
+            utils::log_error(err.str());
+        }
+    } 
+
+    bool DatabaseClient::update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity) {
+        int collectionQuantity;
+        bool proxy = false;
+        std::shared_ptr<sql::PreparedStatement> query(conn->prepareStatement(
+            "SELECT quantity FROM Collection WHERE collectionID = ?"
+        ));
+
+        query->setInt(1, collectionID);
+        std::unique_ptr<sql::ResultSet> res(query->executeQuery());
+
+        if (res->next()) {
+            collectionQuantity = res->getInt("quantity");
+        }
+
+        quantity = quantity - collectionQuantity;
+
+        /*
+            For now we assume cards exist in DB Collection table even with a quantity of 0
+
+            In the future if the card DNE then an empty entry will be added for it,
+            this way we can handle proxies without needing to manually add cards to the DB
+
+            This is what scryfall query is for, just needs to be fully implemented
+        */
+
+        if (quantity < 0) {
+            std::ostringstream err;
+            err << "Error: Insufficient quantity; [" << collectionID << "] marked as proxy";
+            utils::log_error(err.str());
+            quantity = 0;
+            proxy = true;
+        }
+
+        try {
+            std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+                "UPDATE Collection SET quantity = ? WHERE collectionID = ?"
+            ));
+            
+            stmnt->setInt(1, quantity);
+            stmnt->setInt(2, collectionID);
+
+            stmnt->execute();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error updating collection: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return proxy;
+    }
+
+    void DatabaseClient::create_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd) {
+        try {
+            std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+                "INSERT INTO Decks (deckID, collectionID, numberInDeck, isProxy) VALUES (?, ?, ?, ?)"
+            ));
+
+            stmnt->setInt(1, dd.deckID);
+            stmnt->setInt(2, dd.collectionID);
+            stmnt->setInt(3, dd.numberInDeck);
+            stmnt->setBoolean(4, dd.isProxy);
+
+            stmnt->execute();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding to deck: " << e.what();
+            utils::log_error(err.str());
+        }
     }
 
     std::unique_ptr<sql::Connection> AppContext::get_connection() {
@@ -134,7 +233,7 @@ namespace app {
 
             if (jsonList.empty()) {
                 utils::log_error("Redis failure");
-                return;
+                continue; // Not very graceful recovery, but this should never happen?
             }
 
             std::vector<std::thread> threads;
@@ -148,65 +247,83 @@ namespace app {
         }
     }
 
-    void worker_thread(AppContext &app, const json &taskJson) {
-        // Check DB for card
+    void worker_thread(AppContext &app, const json &cardJson) {
+        // get connection
         std::unique_ptr<sql::Connection> conn(app.get_connection());
+        conn->setAutoCommit(false);
 
-        std::string cardName = taskJson["name"];
+        // Set deck name
+        int deckID;
+        std::string deckName;
+        if (cardJson.contains("deckName")) {
+            deckName = cardJson["deckName"];
+            name_deck(conn, deckName);
+        } else {
+            deckName = cardJson["dName"];
+            deckID = app.globalDBClient.get_deckID(conn, deckName);
+        }
+
+        // Check DB for card
+        std::string cardName = cardJson["name"];
         int cardID = app.globalDBClient.get_cardID(conn, cardName);
 
         int collectionID = 0;
         if (cardID) {
-            std::string setCode = taskJson["setCode"];
+            std::string setCode = cardJson["set"];
             int setID = app.globalDBClient.get_setID(conn, setCode);
             if (setID) {
                 collectionID = app.globalDBClient.get_collectionID(conn, setID, cardID);
             } else {
                 // At some point this should trigger a query/scrape to add new set(s)
-                // Then after new set(s) added, try again
-
                 /*
-                Will need new mutex to lock this down 
-                and ensure that multiple threads do no attempt the same query
+                    After new set(s) added, try queries again
+
+                    Will need new mutex to lock this down 
+                    and ensure that multiple threads do no attempt the same query
                 */
-                std::string error = "set " + setCode + " missing from DB";
+                std::string error = "set " + setCode + " not present in DB";
                 utils::log_error(error);
             }
         }
 
         // If query comes back empty, i.e. collectionID == 0, query scryfall for card data
         std::string result;
-        if (collectionID) {
-            std::string query = taskJson["url"];
+        if (!collectionID) {
+            std::string query = cardJson["url"];
             app.globalClient.apiWait([&]() {
                 result = requests::query_scryfall(query, app.headers);
             });
 
-            // Add scryfall results to DB
-        } 
-
-        // Update existing fields
-        {
-            // call function and pass &json?
+            // Add scryfall results to DB here
         }
 
-        // Parse query result into json
-        json parsedResult = json::parse(result);
-        std::string cardName = parsedResult["name"];
-        utils::replace_char(cardName, ' ', '-');
-        utils::log_info(cardName);
+        // Update existing fields
+        int quantity = cardJson["quantity"].get<int>();
+        bool isProxy = app.globalDBClient.update_collection(conn, collectionID, quantity);
+        DeckDetails dd = {deckID, collectionID, quantity, isProxy};
+        app.globalDBClient.create_decklist(conn, dd);
 
-        // extract card image file endpoint
-        std::string fileEndpoint = parsedResult["image_uris"]["normal"]; // Might not be normal, double check python
-        utils::log_info(fileEndpoint);
+        // temporarily removed this section for testing
+        bool download = false;
+        if (download) {
+            // Parse query result into json
+            json parsedResult = json::parse(result);
+            std::string card = parsedResult["name"];
+            utils::replace_char(card, ' ', '-');
+            utils::log_info(card);
 
-        // construct file path for donwload
-        // this will be changed to "[cardID]-[cardSet].jpg" after db conn is implemented
-        std::string testDir = "/var/www/mtgwebapp/downloadTest/";
-        std::string testFileName = testDir + cardName + ".jpg";
-        
-        // Download card image
-        download_card_image(fileEndpoint, testFileName, app.headers);
+            // extract card image file endpoint
+            std::string fileEndpoint = parsedResult["image_uris"]["normal"]; // Might not be normal, double check python
+            utils::log_info(fileEndpoint);
+
+            // construct file path for donwload
+            // this will be changed to "[cardID]-[cardSet].jpg" after db conn is implemented
+            std::string testDir = "/var/www/mtgwebapp/downloadTest/";
+            std::string testFileName = testDir + card + ".jpg";
+            
+            // Download card image
+            download_card_image(fileEndpoint, testFileName, app.headers);
+        }
     }
 
 }
