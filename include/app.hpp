@@ -13,13 +13,14 @@ namespace app {
 
     class DatabaseClient {
     private:
+        // Not stricly necessary unless there is a race condition between threads
         std::mutex writeMutex;
-        std::mutex readMutex;
     public:
         int get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName);
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
-        void db_write(const std::string &dbData); //This will be data from read, change from string
+        void update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
+        void create_decklist(std::unique_ptr<sql::Connection> &conn, int deckID, int collectionID, int quantity);
     };
 
     struct DatabaseConfig {
