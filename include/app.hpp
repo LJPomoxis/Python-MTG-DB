@@ -11,6 +11,13 @@ using json = nlohmann::json;
 
 namespace app {
 
+    struct DeckDetails {
+        int deckID;
+        int collectionID;
+        int numberInDeck;
+        bool isProxy;
+    };
+
     class DatabaseClient {
     private:
         // Not stricly necessary unless there is a race condition between threads
@@ -19,8 +26,8 @@ namespace app {
         int get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName);
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
-        void update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
-        void create_decklist(std::unique_ptr<sql::Connection> &conn, int deckID, int collectionID, int quantity);
+        bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
+        void create_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
     };
 
     struct DatabaseConfig {
