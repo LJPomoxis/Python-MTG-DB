@@ -513,11 +513,12 @@ def new_deck():
         deckName["deckName"] = nameParts[1]
         push_task_to_cpp(deckName)
 
-        keys = ['type', 'name', 'set', 'amount', 'commander']
+        keys = ['type', 'name', 'set', 'amount', 'commander', 'dName']
         for line in lines:
             items = BULK_CARD_PATTERN.findall(line)
             card = ['deckCardAdd']
             card.extend(list(items[0]))
+            card.append(deckName["deckName"])
             dCard = dict(zip(keys, card))
             dCard['name'] = re.sub(r'[^a-z0-9\s]', '', dCard['name'].lower())
             dCard['url'] = build_card_query(dCard['name'], dCard['set'])
