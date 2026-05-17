@@ -26,6 +26,7 @@ namespace app {
         int get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName);
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
+        int name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
         void create_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
     };
@@ -73,6 +74,6 @@ namespace app {
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
     void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
     void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
-    void worker_thread(AppContext &app, const json &taskJson); // thread logic
+    void worker_thread(AppContext &app, const json &cardJson); // thread logic
 
 }
