@@ -151,7 +151,10 @@ def home():
         fileDownload['filename'] = filename
         fileDownload['path'] = IMAGES_DIR_PATH
         #fileDownload['header'] = HEADER
+        """
+        # Commented to prevent errors
         push_task_to_cpp(fileDownload)
+        """
         image['local'] = False
 
     server['image'] = image
