@@ -1,0 +1,12 @@
+{
+    "DFC_Layouts": [
+        "normal", 
+        "meld", 
+        "class", 
+        "case", 
+        "mutate", 
+        "prototype", 
+        "saga",
+        "prepare"
+    ]
+}
