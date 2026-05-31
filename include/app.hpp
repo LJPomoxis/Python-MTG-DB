@@ -6,10 +6,33 @@
 #include <nlohmann/json.hpp>
 #include <sw/redis++/redis++.h>
 #include <mariadb/conncpp.hpp>
+#include <unordered_set>
 
 using json = nlohmann::json;
 
 namespace app {
+
+    struct cardDetails {
+        int cardID;
+        int setID;
+        std::string name;
+        std::string setCode;
+        int quantity;
+        std::string cleanName; // not strictly necessary in the struct, but needed to keep everything clean
+        std::string color;
+        std::string colorIdentity;
+        int manaValue;
+        std::string displayManaValue;
+        std::unordered_set<std::string> keywords;
+        std::unordered_set<std::string> types;
+        std::string oracle;
+        std::string flavor;
+        int power;
+        int toughness;
+        bool hasXinCost;
+        std::string smallUri;
+        std::string normalUri;
+    };
 
     struct DeckDetails {
         int deckID;
