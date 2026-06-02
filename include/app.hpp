@@ -18,7 +18,7 @@ namespace app {
         std::string name;
         std::string setCode;
         int quantity;
-        std::string cleanName; // not strictly necessary in the struct, but needed to keep everything clean
+        std::string cleanName; // not strictly necessary in the struct, but simpler than processing at time of write
         std::string color;
         std::string colorIdentity;
         int manaValue;
@@ -94,6 +94,10 @@ namespace app {
         std::unique_ptr<sql::Connection> get_connection();
     };
 
+    void process_card_json(cardDetails &card, const json &scryfallResults);
+    int check_cardID(std::unique_ptr<sql::Connection> &conn, const std::string &cardName);
+    void add_to_collection(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+    void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
     DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize);
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
     void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);

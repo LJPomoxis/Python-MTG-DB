@@ -172,6 +172,23 @@ namespace app {
         return std::unique_ptr<sql::Connection>(dataSource->getConnection());
     }
 
+    void process_card_json(cardDetails &card, const json &scryfallResults) {
+
+    }
+
+    int check_cardID(std::unique_ptr<sql::Connection> &conn, const std::string &cardName) {
+
+        return 0;
+    }
+
+    void add_to_collection(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
     DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize) {
         std::string db_host = utils::get_env_var(envFilePath, "DB_HOST");
         std::string db_name = utils::get_env_var(envFilePath, "DB_NAME");
