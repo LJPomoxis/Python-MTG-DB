@@ -172,8 +172,45 @@ namespace app {
         return std::unique_ptr<sql::Connection>(dataSource->getConnection());
     }
 
+    // Doesn't handle DFC currently
     void process_card_json(cardDetails &card, const json &scryfallResults) {
+        json scryfallData = json::parse(scryfallResults);
+        
+        card.name = scryfallData["name"].get<std::string>();
+        card.setCode = scryfallData["set"].get<std::string>();
+        card.quantity = 0;
+        card.cleanName = "";
+        
+        std::vector<char> colors = scryfallData["colors"].get<std::vector<char>>();
+        card.colors = "";
+        std::vector<char> colorIdentity = scryfallData["color_identity"].get<std::vector<char>>();
+        card.colorIdentity = "";
 
+        card.manaValue = scryfallData["cmc"].get<int>();
+        card.displayManaValue = scryfallData["mana_cost"].get<std::string>();
+
+        card.keywords = scryfallData["keywords"].get<std::unordered_set<std::string>>();
+        std::string types = scryfallData["type_line"].get<std::string>();
+        card.types = {"", ""};
+
+        card.oracle = scryfallData["oracle_text"].get<std::string>();
+        card.flavor = scryfallData["flavor_text"].get<std::string>();
+
+        // if type_line has creature
+        // Needs to handle cases of * and X as P/T not just integer values
+        card.power = scryfallData["power"].get<int>();
+        card.toughness = scryfallData["toughness"].get<int>();
+
+        // search mana_cost for the char 'X'
+        card.hasXinCost = true;
+
+        card.smallUri = scryfallData["image_uris"]["small"].get<std::string>();
+        card.normalUri = scryfallData["image_uris"]["normal"].get<std::string>();
+
+        // Need to search for ID, if DNE set ID to 0
+        card.ID = 0;
+        // Use set code to query DB for setID
+        card.setID = 0;
     }
 
     int check_cardID(std::unique_ptr<sql::Connection> &conn, const std::string &cardName) {

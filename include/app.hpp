@@ -13,13 +13,13 @@ using json = nlohmann::json;
 namespace app {
 
     struct cardDetails {
-        int cardID;
+        int ID;
         int setID;
         std::string name;
         std::string setCode;
         int quantity;
         std::string cleanName; // not strictly necessary in the struct, but simpler than processing at time of write
-        std::string color;
+        std::string colors;
         std::string colorIdentity;
         int manaValue;
         std::string displayManaValue;
