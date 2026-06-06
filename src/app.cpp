@@ -6,7 +6,6 @@ namespace app {
 
     int DatabaseClient::get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName) {
         // Check card name against card attribute table to get cardID
-
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "SELECT cardID FROM CardAttributes WHERE cleanCardName LIKE ?"
         ));
@@ -15,7 +14,7 @@ namespace app {
 
         std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
 
-        // if !cardID ret -1
+        // if !cardID ret 0, DB records start at 1 using auto increment
         int cardID = 0;
         if (res->next()) {
             cardID = res->getInt("cardID");
@@ -26,8 +25,7 @@ namespace app {
 
     int DatabaseClient::get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode) {
         // use setCode to get setID from set table
-        // Should handle error of setCode not being in table, but db should contain all sets
-
+        // Maybe in future if setCode doesn't return ID, function is triggered to update sets table
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "SELECT setID FROM SetLookup WHERE setCode LIKE ?"
         ));
@@ -78,7 +76,7 @@ namespace app {
         return deckID;
     }
 
-    void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName) {
+    void DatabaseClient::name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName) {
         try {
             std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
                 "INSERT INTO DeckNameLookup (deckName) VALUES (?)"
@@ -178,48 +176,63 @@ namespace app {
         
         card.name = scryfallData["name"].get<std::string>();
         card.setCode = scryfallData["set"].get<std::string>();
+        // Not sure where this comes into play yet
         card.quantity = 0;
-        card.cleanName = "";
+        card.cleanName = utils::clean_name(card.name);
         
-        std::vector<char> colors = scryfallData["colors"].get<std::vector<char>>();
-        card.colors = "";
-        std::vector<char> colorIdentity = scryfallData["color_identity"].get<std::vector<char>>();
-        card.colorIdentity = "";
+        card.colors = utils::get_color_name(scryfallData["colors"].get<std::vector<std::string>>());
+        card.colorIdentity = utils::get_color_name(scryfallData["color_identity"].get<std::vector<std::string>>());
 
         card.manaValue = scryfallData["cmc"].get<int>();
-        card.displayManaValue = scryfallData["mana_cost"].get<std::string>();
+        std::string manaCost = scryfallData["mana_cost"].get<std::string>();
+        card.displayManaValue = manaCost;
 
         card.keywords = scryfallData["keywords"].get<std::unordered_set<std::string>>();
         std::string types = scryfallData["type_line"].get<std::string>();
-        card.types = {"", ""};
+        utils::extract_types(types, card.types);
 
         card.oracle = scryfallData["oracle_text"].get<std::string>();
         card.flavor = scryfallData["flavor_text"].get<std::string>();
 
-        // if type_line has creature
-        // Needs to handle cases of * and X as P/T not just integer values
-        card.power = scryfallData["power"].get<int>();
-        card.toughness = scryfallData["toughness"].get<int>();
+        for (const auto& type : card.types) {
+            size_t pos = type.find("Creature");
+            if (pos != std::string::npos) {
+                card.isCreature = true;
+            }
+        }
+
+        if (card.isCreature) {
+            if (scryfallData["power"].is_string()) {
+                card.power = 0;
+            } else if (scryfallData["power"].is_number_integer()) {
+                card.power = scryfallData["power"];
+            } else {
+                // default case
+                card.power = 0;
+            }
+
+            if (scryfallData["toughness"].is_string()) {
+                card.toughness = 0;
+            } else if (scryfallData["toughness"]) {
+                card.toughness = scryfallData["toughness"];
+            } else {
+                card.toughness = 0;
+            }
+        }
 
         // search mana_cost for the char 'X'
-        card.hasXinCost = true;
+        card.hasXinCost = false;
+        size_t pos = manaCost.find("X");
+        if (pos != std::string::npos) {
+            card.hasXinCost = true;
+        }
 
         card.smallUri = scryfallData["image_uris"]["small"].get<std::string>();
         card.normalUri = scryfallData["image_uris"]["normal"].get<std::string>();
 
-        // Need to search for ID, if DNE set ID to 0
+        // get cardID and setID are DB functions, not in function purview
         card.ID = 0;
-        // Use set code to query DB for setID
         card.setID = 0;
-    }
-
-    int check_cardID(std::unique_ptr<sql::Connection> &conn, const std::string &cardName) {
-
-        return 0;
-    }
-
-    void add_to_collection(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
-
     }
 
     void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
@@ -311,7 +324,7 @@ namespace app {
         std::string deckName;
         if (cardJson.contains("deckName")) {
             deckName = cardJson["deckName"];
-            name_deck(conn, deckName);
+            app.globalDBClient.name_deck(conn, deckName);
         } else {
             deckName = cardJson["dName"];
             deckID = app.globalDBClient.get_deckID(conn, deckName);

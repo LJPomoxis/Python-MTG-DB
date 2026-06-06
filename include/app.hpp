@@ -27,6 +27,7 @@ namespace app {
         std::unordered_set<std::string> types;
         std::string oracle;
         std::string flavor;
+        bool isCreature = false;
         int power;
         int toughness;
         bool hasXinCost;
@@ -95,8 +96,6 @@ namespace app {
     };
 
     void process_card_json(cardDetails &card, const json &scryfallResults);
-    int check_cardID(std::unique_ptr<sql::Connection> &conn, const std::string &cardName);
-    void add_to_collection(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
     void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
     DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize);
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
