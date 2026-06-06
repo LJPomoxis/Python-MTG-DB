@@ -121,4 +121,28 @@ namespace utils {
 
         return cleanName;
     }
+
+    std::string_view get_color_name(const std::vector<std::string> &colors) {
+        if (colors.empty()) return ColorNames[0];
+
+        std::string color;
+        int colorKey = 0;
+
+        for (const auto& c : colors) {
+            color += c;
+        }
+
+        size_t pos = color.find("W");
+        if (pos != std::string::npos) colorKey |= 0b10000;
+        pos = color.find("U");
+        if (pos != std::string::npos) colorKey |= 0b1000;
+        pos = color.find("B");
+        if (pos != std::string::npos) colorKey |= 0b100;
+        pos = color.find("R");
+        if (pos != std::string::npos) colorKey |= 0b10;
+        pos = color.find("G");
+        if (pos != std::string::npos) colorKey |= 0b1;
+
+        return ColorNames[colorKey];
+    }
 }
