@@ -15,7 +15,7 @@ namespace requests {
         cpr::Response response = cpr::Get(cpr::Url{query},
                                     cpr::Header{headers});
 
-        json results = json::parse(response.text);
+        //json results = json::parse(response.text);
         
         return response.text;
     }
