@@ -4,6 +4,7 @@
 #include <fmt/chrono.h>
 #include <fstream>
 #include <unordered_set>
+#include <string>
 
 namespace utils {
 
@@ -100,5 +101,24 @@ namespace utils {
         while(input >> keyword) {
             inputSet.insert(keyword);
         }
+    }
+
+    std::string clean_name(const std::string &cardName) {
+        std::string cleanName;
+
+        int i = 0;
+        while (cardName[i] != '\0') {
+            char curr = cardName[i];
+            if (curr == ' ' || (curr >= 'a' && curr <= 'z')) {
+                cleanName.push_back(curr);
+            } else if (curr >= 'A' && curr <= 'Z') {
+                char temp = curr - 'A' + 'a';
+                cleanName.push_back(temp);
+            }
+
+            i++;
+        }
+
+        return cleanName;
     }
 }

@@ -17,5 +17,7 @@ namespace utils {
     void process_result(const std::string &result); // function for parsing and checking queried data
     void replace_char(std::string &inputStr, const char checkChar, const char replaceChar);
     void extract_types(const std::string &inputString, std::unordered_set<std::string> &inputSet);
+    std::string clean_name(const std::string &cardName);
+    std::string get_color_name(std::vector<char> colors);
 
 }
