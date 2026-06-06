@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 #include <fmt/chrono.h>
 #include <fstream>
+#include <unordered_set>
 
 namespace utils {
 
@@ -82,14 +83,22 @@ namespace utils {
         log_info(parsedResult["name"]);
     }
 
-    void replace_char(std::string &cardName, const char checkChar, const char replaceChar) {
+    void replace_char(std::string &inputStr, const char checkChar, const char replaceChar) {
         int i = 0;
-        while (cardName[i] != '\0') {
-            if (cardName[i] == checkChar) {
-                cardName[i] = replaceChar;
+        while (inputStr[i] != '\0') {
+            if (inputStr[i] == checkChar) {
+                inputStr[i] = replaceChar;
             }
             ++i;
         }
     }
 
+    void extract_types(const std::string &inputString, std::unordered_set<std::string> &inputSet) {
+        std::istringstream input(inputString);
+        std::string keyword;
+
+        while(input >> keyword) {
+            inputSet.insert(keyword);
+        }
+    }
 }
