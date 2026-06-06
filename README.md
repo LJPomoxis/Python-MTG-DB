@@ -36,4 +36,4 @@ A custom, self-hosted web application for tracking your Magic: The Gathering car
 
 [ ] Playtest Feature: A playtesting environment for playtesting decks built in the web app.
 
-[ ] Refactor Python Database Interaction: Python should be limited to select statements to imporove speed and responsiveness.
+[ ] Refactor Python Database Interaction: Python should be limited to select statements to improve speed and responsiveness.
