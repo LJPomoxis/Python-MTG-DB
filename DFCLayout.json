@@ -1,7 +1,7 @@
 {
+    "_comment": "meld not included due to not being handled by DB. No current plans to handle meld",
     "DFC_Layouts": [
-        "normal", 
-        "meld", 
+        "normal",
         "class", 
         "case", 
         "mutate", 
