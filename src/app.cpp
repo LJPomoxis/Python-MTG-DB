@@ -77,6 +77,48 @@ namespace app {
         return deckID;
     }
 
+    void DatabaseClient::add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+        // create cardID
+        
+        // get setID from setCode
+
+        // create collectionID
+            // add to collection cardID + setID + quantity
+                // for multi-use function, check if cardID + setID exists
+                // Then query quantity, add new quantity and update record
+
+        // add keywords
+            // use KeywordLookup and CardKeywords tables
+
+        // add types
+            // use TypeLookup and CardTypes tables
+
+        // add dfcID (check if card is DFC, should be card.isDFC)
+            // add cardID to dfc table
+
+        // add card colors
+            // get colorID from ColorLookup using color name (string; i.e. boros)
+            // add to CardColors cardID + colorID + colorIdentityID (find colorID for color and color identity)
+
+        // add card oracle (check if oracle contains more than whitespace)
+            // check if oracle for cardID exists, if so skip
+
+        // add card flavor (check if flavor contains more than whitespace)
+            // check FlavorLookup table for flavor string (exact string)
+            // If exists, get flavorID and add it to CardFlavor w/ cardID + setID + flavorID
+
+        // add card mana value
+            // add to CardManaValue cardID + manaValue + hasXinCost + stringManaValue
+
+        // add card P/T (Check if P/T are populated)
+            // add to CardPT cardID + power + toughness
+
+        // add card image (image uris)
+            // add to CardImage cardID + setID + imageUrl + bigImageUrl
+            // (imageUrl = small, bigImageUrl = normal)
+
+    }
+
     void DatabaseClient::name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName) {
         try {
             std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
@@ -185,6 +227,7 @@ namespace app {
 
     cardDetails process_faces(const cardDetails &inCard, const json &faceData) {
         cardDetails card = inCard;
+        card.isDFC = true;
 
         card.name = faceData["name"].get<std::string>();
         card.cleanName = utils::clean_name(card.name);
@@ -203,9 +246,6 @@ namespace app {
         }
 
         if (faceData.contains("power")) card.isCreature = true;
-        card.power = 0;
-        card.toughness = 0;
-
         if (card.isCreature) {
             if (faceData["power"].is_number_integer()) {
                 card.power = faceData["power"].get<int>();
@@ -217,7 +257,6 @@ namespace app {
         }
 
         // search mana_cost for the char 'X'
-        card.hasXinCost = false;
         size_t pos = card.displayManaValue.find("X");
         if (pos != std::string::npos) {
             card.hasXinCost = true;
@@ -225,8 +264,6 @@ namespace app {
 
         card.smallUri = faceData["image_uris"]["small"].get<std::string>();
         card.normalUri = faceData["image_uris"]["normal"].get<std::string>();
-
-        card.isDFC = true;
 
         return card;
     }
@@ -239,9 +276,8 @@ namespace app {
         std::vector<cardDetails> cards;
         cardDetails card;
 
-        card.ID = 0;
-        card.setID = 0;
-        card.quantity = 0;
+        card.ID = card.setID = card.quantity = 0;
+
         card.setCode = scryfallData["set"].get<std::string>();
         card.colorIdentity = utils::get_color_name(scryfallData["color_identity"].get<std::vector<std::string>>());
         card.manaValue = scryfallData["cmc"].get<int>();
@@ -273,8 +309,6 @@ namespace app {
         }
 
         if (scryfallData.contains("power")) cards[0].isCreature = true;
-        cards[0].power = 0;
-        cards[0].toughness = 0;
 
         if (cards[0].isCreature) {
             if (scryfallData["power"].is_number_integer()) {
@@ -287,7 +321,6 @@ namespace app {
         }
 
         // search mana_cost for the char 'X'
-        cards[0].hasXinCost = false;
         size_t pos = cards[0].displayManaValue.find("X");
         if (pos != std::string::npos) {
             cards[0].hasXinCost = true;
@@ -446,7 +479,7 @@ namespace app {
             }
         }
 
-        // If query comes back empty, i.e. collectionID == 0, query scryfall for card data
+        // If DB query comes back empty, i.e. collectionID == 0, query scryfall for card data
         std::string result;
         std::vector<cardDetails> cards;
         if (!card.collectionID) {
@@ -455,17 +488,22 @@ namespace app {
                 result = requests::query_scryfall(query, app.headers);
             });
 
+            // Process json results into cardDetails struct
             cards = process_card_json(result);
 
-            // Add scryfall results to DB here
+            // Add card(s) to the database
+            for (const auto& c : cards) {
+                app.globalDBClient.add_new_card(conn, c);
+            }
         } else {
             cards.emplace_back(card);
         }
 
         // Update existing fields
-        card.quantity = cardJson["quantity"].get<int>();
-        bool isProxy = app.globalDBClient.update_collection(conn, card.collectionID, card.quantity);
-        DeckDetails dd = {deckID, card.collectionID, card.quantity, isProxy};
+        // Using cards[0] because we only want to add front of DFC to decklist, not both sides
+        cards[0].quantity = cardJson["quantity"].get<int>();
+        bool isProxy = app.globalDBClient.update_collection(conn, cards[0].collectionID, cards[0].quantity);
+        DeckDetails dd = {deckID, cards[0].collectionID, cards[0].quantity, isProxy};
         app.globalDBClient.update_decklist(conn, dd);
     }
 

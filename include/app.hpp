@@ -17,10 +17,10 @@ namespace app {
         int ID;
         int setID;
         int collectionID;
+        int quantity;
         std::string name;
         std::string setCode;
-        int quantity;
-        std::string cleanName; // not strictly necessary in the struct, but simpler than processing at time of write
+        std::string cleanName; // not strictly necessary, but simpler to generate during json parsing
         std::string colors;
         std::string colorIdentity;
         int manaValue;
@@ -30,9 +30,9 @@ namespace app {
         std::string oracle;
         std::string flavor;
         bool isCreature = false;
-        int power;
-        int toughness;
-        bool hasXinCost;
+        int power = 0;
+        int toughness = 0;
+        bool hasXinCost = false;
         std::string smallUri;
         std::string normalUri;
         bool isDFC = false;
@@ -54,7 +54,7 @@ namespace app {
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
         int get_deckID(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
-        //void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
         void update_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
