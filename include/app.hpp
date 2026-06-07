@@ -52,8 +52,24 @@ namespace app {
     public:
         int get_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName);
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
+        int get_colorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString colorName);
+        int get_typeNumber(std::unique_ptr<sql::Connection> &conn, sql::SQLString type);
+        int get_keywordNumber(std::unique_ptr<sql::Connection> &conn, sql::SQLString keyword);
+        int get_flavorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString flavor);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
         int get_deckID(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
+        
+        int create_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName, sql::SQLString cleanCardName);
+        void add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_types(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_dfcID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_mana(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+
         void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);

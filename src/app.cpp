@@ -42,6 +42,28 @@ namespace app {
         return setID;
     }
 
+    //
+    int DatabaseClient::get_colorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString colorName) {
+
+        return 0;
+    }
+    
+    int DatabaseClient::get_typeNumber(std::unique_ptr<sql::Connection> &conn, sql::SQLString type) {
+
+        return 0;
+    }
+
+    int DatabaseClient::get_keywordNumber(std::unique_ptr<sql::Connection> &conn, sql::SQLString keyword) {
+
+        return 0;
+    }
+
+    int DatabaseClient::get_flavorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString flavor) {
+
+        return 0;
+    }
+    //
+
     int DatabaseClient::get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID) {
         // Uses setID and cardID to check Collection table for entry
 
@@ -76,6 +98,49 @@ namespace app {
 
         return deckID;
     }
+
+    //
+    int DatabaseClient::create_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName, sql::SQLString cleanCardName) {
+
+        return 0;
+    }
+
+    void DatabaseClient::add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_types(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_dfcID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_card_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_card_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_card_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_card_mana(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+
+    void DatabaseClient::add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+    }
+    //
 
     void DatabaseClient::add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
         // create cardID
