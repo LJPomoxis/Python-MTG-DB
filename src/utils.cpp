@@ -94,13 +94,15 @@ namespace utils {
         }
     }
 
-    void extract_types(const std::string &inputString, std::unordered_set<std::string> &inputSet) {
+    std::unordered_set<std::string> extract_types(const std::string &inputString) {
         std::istringstream input(inputString);
         std::string keyword;
+        std::unordered_set<std::string> outputSet;
 
         while(input >> keyword) {
-            inputSet.insert(keyword);
+            outputSet.insert(keyword);
         }
+        return outputSet;
     }
 
     std::string clean_name(const std::string &cardName) {

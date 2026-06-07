@@ -51,7 +51,7 @@ namespace utils {
     std::string get_env_var(std::string path, std::string varName); // pulls email from env file
     void process_result(const std::string &result); // function for parsing and checking queried data
     void replace_char(std::string &inputStr, const char checkChar, const char replaceChar);
-    void extract_types(const std::string &inputString, std::unordered_set<std::string> &inputSet);
+    std::unordered_set<std::string> extract_types(const std::string &inputString);
     std::string clean_name(const std::string &cardName);
     std::string_view get_color_name(const std::vector<std::string> &colors);
 
