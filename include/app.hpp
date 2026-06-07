@@ -7,6 +7,7 @@
 #include <sw/redis++/redis++.h>
 #include <mariadb/conncpp.hpp>
 #include <unordered_set>
+#include <optional>
 
 using json = nlohmann::json;
 
@@ -15,6 +16,7 @@ namespace app {
     struct cardDetails {
         int ID;
         int setID;
+        int collectionID;
         std::string name;
         std::string setCode;
         int quantity;
@@ -33,6 +35,7 @@ namespace app {
         bool hasXinCost;
         std::string smallUri;
         std::string normalUri;
+        bool isDFC = false;
     };
 
     struct DeckDetails {
@@ -51,9 +54,10 @@ namespace app {
         int get_setID(std::unique_ptr<sql::Connection> &conn, sql::SQLString setCode);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
         int get_deckID(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
+        //void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
-        void create_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
+        void update_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
     };
 
     struct DatabaseConfig {
@@ -95,11 +99,13 @@ namespace app {
         std::unique_ptr<sql::Connection> get_connection();
     };
 
-    void process_card_json(cardDetails &card, const json &scryfallResults);
-    void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+    std::optional<std::vector<json>> extract_faces(const json &scryfallData);
+    cardDetails process_faces(const cardDetails &inCard, const json &faceData);
+    std::vector<cardDetails> process_card_json(const std::string &scryfallResults);
+    void download_card_image(const cardDetails &card, const std::string &scryfallResults, const cpr::Header &headers);
+    void download_file(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
     DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize);
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
-    void download_card_image(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
     void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
     void worker_thread(AppContext &app, const json &cardJson); // thread logic
 

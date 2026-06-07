@@ -1,6 +1,7 @@
 #include "../include/app.hpp"
 #include "../include/utils.hpp"
 #include "../include/requests.hpp"
+#include <optional>
 
 namespace app {
 
@@ -145,7 +146,7 @@ namespace app {
         return proxy;
     }
 
-    void DatabaseClient::create_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd) {
+    void DatabaseClient::update_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd) {
         try {
             std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
                 "INSERT INTO Decks (deckID, collectionID, numberInDeck, isProxy) VALUES (?, ?, ?, ?)"
@@ -170,73 +171,171 @@ namespace app {
         return std::unique_ptr<sql::Connection>(dataSource->getConnection());
     }
 
-    // Doesn't handle DFC currently
-    void process_card_json(cardDetails &card, const json &scryfallResults) {
-        json scryfallData = json::parse(scryfallResults);
-        
-        card.name = scryfallData["name"].get<std::string>();
-        card.setCode = scryfallData["set"].get<std::string>();
-        // Not sure where this comes into play yet
-        card.quantity = 0;
-        card.cleanName = utils::clean_name(card.name);
-        
-        card.colors = utils::get_color_name(scryfallData["colors"].get<std::vector<std::string>>());
-        card.colorIdentity = utils::get_color_name(scryfallData["color_identity"].get<std::vector<std::string>>());
-
-        card.manaValue = scryfallData["cmc"].get<int>();
-        std::string manaCost = scryfallData["mana_cost"].get<std::string>();
-        card.displayManaValue = manaCost;
-
-        card.keywords = scryfallData["keywords"].get<std::unordered_set<std::string>>();
-        std::string types = scryfallData["type_line"].get<std::string>();
-        utils::extract_types(types, card.types);
-
-        card.oracle = scryfallData["oracle_text"].get<std::string>();
-        card.flavor = scryfallData["flavor_text"].get<std::string>();
-
-        for (const auto& type : card.types) {
-            size_t pos = type.find("Creature");
-            if (pos != std::string::npos) {
-                card.isCreature = true;
-            }
+    std::optional<std::vector<json>> extract_faces(const json &scryfallData) {
+        if (!scryfallData.contains("card_faces")) {
+            return std::nullopt;
         }
 
-        if (card.isCreature) {
-            if (scryfallData["power"].is_string()) {
-                card.power = 0;
-            } else if (scryfallData["power"].is_number_integer()) {
-                card.power = scryfallData["power"];
-            } else {
-                // default case
-                card.power = 0;
-            }
+        std::vector<json> faceData;
+        for (const auto& face : scryfallData["card_faces"]) {
+            faceData.emplace_back(face);
+        }
+        return faceData;
+    }
 
-            if (scryfallData["toughness"].is_string()) {
-                card.toughness = 0;
-            } else if (scryfallData["toughness"]) {
-                card.toughness = scryfallData["toughness"];
-            } else {
-                card.toughness = 0;
+    cardDetails process_faces(const cardDetails &inCard, const json &faceData) {
+        cardDetails card = inCard;
+
+        card.name = faceData["name"].get<std::string>();
+        card.cleanName = utils::clean_name(card.name);
+
+        card.colors = utils::get_color_name(faceData["colors"].get<std::vector<std::string>>());
+        card.displayManaValue = faceData["mana_cost"].get<std::string>();
+
+        std::string types = faceData["type_line"].get<std::string>();
+        card.types = utils::extract_types(types);
+
+        card.oracle = faceData["oracle_text"].get<std::string>();
+        if (faceData.contains("flavor_text")) {
+            card.flavor = faceData["flavor_text"].get<std::string>();
+        } else {
+            card.flavor = "";
+        }
+
+        if (faceData.contains("power")) card.isCreature = true;
+        card.power = 0;
+        card.toughness = 0;
+
+        if (card.isCreature) {
+            if (faceData["power"].is_number_integer()) {
+                card.power = faceData["power"].get<int>();
+            }
+            
+            if (faceData["toughness"].is_number_integer()) {
+                card.toughness = faceData["toughness"].get<int>();
             }
         }
 
         // search mana_cost for the char 'X'
         card.hasXinCost = false;
-        size_t pos = manaCost.find("X");
+        size_t pos = card.displayManaValue.find("X");
         if (pos != std::string::npos) {
             card.hasXinCost = true;
         }
 
-        card.smallUri = scryfallData["image_uris"]["small"].get<std::string>();
-        card.normalUri = scryfallData["image_uris"]["normal"].get<std::string>();
+        card.smallUri = faceData["image_uris"]["small"].get<std::string>();
+        card.normalUri = faceData["image_uris"]["normal"].get<std::string>();
 
-        // get cardID and setID are DB functions, not in function purview
-        card.ID = 0;
-        card.setID = 0;
+        card.isDFC = true;
+
+        return card;
     }
 
-    void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    std::vector<cardDetails> process_card_json(const std::string &scryfallResults) {
+        json scryfallData = json::parse(scryfallResults);
+        
+        auto faces = extract_faces(scryfallData);
 
+        std::vector<cardDetails> cards;
+        cardDetails card;
+
+        card.ID = 0;
+        card.setID = 0;
+        card.quantity = 0;
+        card.setCode = scryfallData["set"].get<std::string>();
+        card.colorIdentity = utils::get_color_name(scryfallData["color_identity"].get<std::vector<std::string>>());
+        card.manaValue = scryfallData["cmc"].get<int>();
+        card.keywords = scryfallData["keywords"].get<std::unordered_set<std::string>>();
+
+        if (faces.has_value()) {
+            for (const auto& face : faces.value()) {
+                cards.emplace_back(process_faces(card, face));
+            }
+            return cards;
+        }
+
+        cards.emplace_back(card);
+
+        cards[0].name = scryfallData["name"].get<std::string>();
+        cards[0].cleanName = utils::clean_name(cards[0].name);
+        
+        cards[0].colors = utils::get_color_name(scryfallData["colors"].get<std::vector<std::string>>());
+        cards[0].displayManaValue = scryfallData["mana_cost"].get<std::string>();
+
+        std::string types = scryfallData["type_line"].get<std::string>();
+        cards[0].types = utils::extract_types(types);
+
+        cards[0].oracle = scryfallData["oracle_text"].get<std::string>();
+        if (scryfallData.contains("flavor_text")) {
+            cards[0].flavor = scryfallData["flavor_text"].get<std::string>();
+        } else {
+            cards[0].flavor = "";
+        }
+
+        if (scryfallData.contains("power")) cards[0].isCreature = true;
+        cards[0].power = 0;
+        cards[0].toughness = 0;
+
+        if (cards[0].isCreature) {
+            if (scryfallData["power"].is_number_integer()) {
+                cards[0].power = scryfallData["power"].get<int>();
+            }
+            
+            if (scryfallData["toughness"].is_number_integer()) {
+                cards[0].toughness = scryfallData["toughness"].get<int>();
+            }
+        }
+
+        // search mana_cost for the char 'X'
+        cards[0].hasXinCost = false;
+        size_t pos = cards[0].displayManaValue.find("X");
+        if (pos != std::string::npos) {
+            cards[0].hasXinCost = true;
+        }
+
+        cards[0].smallUri = scryfallData["image_uris"]["small"].get<std::string>();
+        cards[0].normalUri = scryfallData["image_uris"]["normal"].get<std::string>();
+
+        return cards;
+    }
+
+    // Currently doesn't download both sides of DFC, only requested side
+    void download_card_image(const cardDetails &card, const std::string &scryfallResults, const cpr::Header &headers) {
+        // Parse query result into json
+        json scryfallData = json::parse(scryfallResults);
+
+        // extract card image file endpoint
+        std::string fileEndpoint;
+        if (scryfallData.contains("card_faces")) {
+            bool loop = true;
+            // Structured to maybe handle DFC eventually?
+            for (const auto& face : scryfallData["card_faces"]) {
+                if (loop) {
+                    loop = false;
+                    fileEndpoint = face["image_uris"]["normal"].get<std::string>();
+                }
+            }
+        } else {
+            fileEndpoint = scryfallData["image_uris"]["normal"].get<std::string>();
+        }
+
+        // Construct download file path
+        std::string imageDir = "/var/www/mtgwebapp/static/images/cards";
+        std::string ID = utils::i_to_str(card.ID);
+        std::string setID = utils::i_to_str(card.setID);
+        std::string fileName = imageDir + ID + "-" + setID + ".jpg";
+        
+        // Download card image
+        download_file(fileEndpoint, fileName, headers);
+    }
+
+    void download_file(const std::string &fileEndpoint, const std::string &fileName, const cpr::Header &headers) {
+        std::ofstream outFile(fileName, std::ios::binary);
+
+        cpr::Response response = cpr::Download(outFile, cpr::Url{fileEndpoint}, headers);
+
+        std::string reponseStatus = "Download http status code: " + response.status_code;
+        utils::log_info(reponseStatus);
     }
 
     DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize) {
@@ -282,15 +381,6 @@ namespace app {
         }
     }
 
-    void download_card_image(const std::string &fileEndpoint, const std::string &fileName, const cpr::Header &headers) {
-        std::ofstream outFile(fileName, std::ios::binary);
-
-        cpr::Response response = cpr::Download(outFile, cpr::Url{fileEndpoint}, headers);
-
-        std::string reponseStatus = "Download http status code: " + response.status_code;
-        utils::log_info(reponseStatus);
-    }
-
     void app_loop(AppContext &app) {
         app.headers = requests::format_header(utils::get_env_var(app.envFilePath, "EMAIL"));
 
@@ -314,6 +404,8 @@ namespace app {
         }
     }
 
+    // Needs to account for multiple card inside of cards vector
+    // Currently broken due to the fact that card is passed to functions and then not used
     void worker_thread(AppContext &app, const json &cardJson) {
         // get connection
         std::unique_ptr<sql::Connection> conn(app.get_connection());
@@ -331,15 +423,16 @@ namespace app {
         }
 
         // Check DB for card
-        std::string cardName = cardJson["name"];
-        int cardID = app.globalDBClient.get_cardID(conn, cardName);
+        cardDetails card;
+        card.name = cardJson["name"];
+        card.ID = app.globalDBClient.get_cardID(conn, card.name);
 
-        int collectionID = 0;
-        if (cardID) {
-            std::string setCode = cardJson["set"];
-            int setID = app.globalDBClient.get_setID(conn, setCode);
-            if (setID) {
-                collectionID = app.globalDBClient.get_collectionID(conn, setID, cardID);
+        card.collectionID = 0;
+        if (card.ID) {
+            card.setCode = cardJson["set"];
+            card.setID = app.globalDBClient.get_setID(conn, card.setCode);
+            if (card.setID) {
+                card.collectionID = app.globalDBClient.get_collectionID(conn, card.setID, card.ID);
             } else {
                 // At some point this should trigger a query/scrape to add new set(s)
                 /*
@@ -348,49 +441,32 @@ namespace app {
                     Will need new mutex to lock this down 
                     and ensure that multiple threads do no attempt the same query
                 */
-                std::string error = "set " + setCode + " not present in DB";
+                std::string error = "set " + card.setCode + " not present in DB";
                 utils::log_error(error);
             }
         }
 
         // If query comes back empty, i.e. collectionID == 0, query scryfall for card data
         std::string result;
-        if (!collectionID) {
+        std::vector<cardDetails> cards;
+        if (!card.collectionID) {
             std::string query = cardJson["url"];
             app.globalClient.apiWait([&]() {
                 result = requests::query_scryfall(query, app.headers);
             });
 
+            cards = process_card_json(result);
+
             // Add scryfall results to DB here
+        } else {
+            cards.emplace_back(card);
         }
 
         // Update existing fields
-        int quantity = cardJson["quantity"].get<int>();
-        bool isProxy = app.globalDBClient.update_collection(conn, collectionID, quantity);
-        DeckDetails dd = {deckID, collectionID, quantity, isProxy};
-        app.globalDBClient.create_decklist(conn, dd);
-
-        // temporarily removed this section for testing
-        bool download = false;
-        if (download) {
-            // Parse query result into json
-            json parsedResult = json::parse(result);
-            std::string card = parsedResult["name"];
-            utils::replace_char(card, ' ', '-');
-            utils::log_info(card);
-
-            // extract card image file endpoint
-            std::string fileEndpoint = parsedResult["image_uris"]["normal"]; // Might not be normal, double check python
-            utils::log_info(fileEndpoint);
-
-            // construct file path for donwload
-            // this will be changed to "[cardID]-[cardSet].jpg" after db conn is implemented
-            std::string testDir = "/var/www/mtgwebapp/downloadTest/";
-            std::string testFileName = testDir + card + ".jpg";
-            
-            // Download card image
-            download_card_image(fileEndpoint, testFileName, app.headers);
-        }
+        card.quantity = cardJson["quantity"].get<int>();
+        bool isProxy = app.globalDBClient.update_collection(conn, card.collectionID, card.quantity);
+        DeckDetails dd = {deckID, card.collectionID, card.quantity, isProxy};
+        app.globalDBClient.update_decklist(conn, dd);
     }
 
 }
