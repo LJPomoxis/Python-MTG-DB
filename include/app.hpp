@@ -70,7 +70,7 @@ namespace app {
         void add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
 
-        void add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_new_card(std::unique_ptr<sql::Connection> &conn, cardDetails &card);
         void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         bool update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity);
         void update_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd);
