@@ -99,12 +99,40 @@ namespace app {
         return deckID;
     }
 
-    //
     int DatabaseClient::create_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName, sql::SQLString cleanCardName) {
+        // default value, if returned as 0 error has occured
+        int generatedCardID = 0;
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+           "INSERT INTO CardAttributes (cardName, cleanCardName) VALUES (?, ?)" 
+        ));
 
-        return 0;
+        try {
+            stmnt->setString(1, cardName);
+            stmnt->setString(2, cleanCardName);
+
+            stmnt->executeUpdate();
+            std::shared_ptr<sql::ResultSet> res(stmnt->getGeneratedKeys());
+
+            if (res->next()) {
+                generatedCardID = res->getInt(1);
+                std::string message = "Succesfully created: " + std::string(cardName);
+                utils::log_info(message);
+            } else {
+                std::string error = "Error creating: " + std::string(cardName);
+                utils::log_error(error);
+            }
+
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return generatedCardID;
     }
 
+    //
     void DatabaseClient::add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
     }
@@ -142,10 +170,12 @@ namespace app {
     }
     //
 
-    void DatabaseClient::add_new_card(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_new_card(std::unique_ptr<sql::Connection> &conn, cardDetails &card) {
         // create cardID
+        card.ID = create_cardID(conn, card.name, card.cleanName);
         
         // get setID from setCode
+        card.setID = get_setID(conn, card.setCode);
 
         // create collectionID
             // add to collection cardID + setID + quantity
@@ -194,6 +224,7 @@ namespace app {
             stmnt->execute();
             conn->commit();
         } catch (sql::SQLException &e) {
+            conn->rollback();
             std::ostringstream err;
             err << "Error naming deck: " << e.what();
             utils::log_error(err.str());
@@ -202,7 +233,7 @@ namespace app {
 
     bool DatabaseClient::update_collection(std::unique_ptr<sql::Connection> &conn, int collectionID, int quantity) {
         int collectionQuantity;
-        bool proxy = false;
+        bool isProxy = false;
         std::shared_ptr<sql::PreparedStatement> query(conn->prepareStatement(
             "SELECT quantity FROM Collection WHERE collectionID = ?"
         ));
@@ -215,22 +246,12 @@ namespace app {
         }
 
         quantity = quantity - collectionQuantity;
-
-        /*
-            For now we assume cards exist in DB Collection table even with a quantity of 0
-
-            In the future if the card DNE then an empty entry will be added for it,
-            this way we can handle proxies without needing to manually add cards to the DB
-
-            This is what scryfall query is for, just needs to be fully implemented
-        */
-
         if (quantity < 0) {
             std::ostringstream err;
             err << "Error: Insufficient quantity; [" << collectionID << "] marked as proxy";
             utils::log_error(err.str());
             quantity = 0;
-            proxy = true;
+            isProxy = true;
         }
 
         try {
@@ -250,7 +271,7 @@ namespace app {
             utils::log_error(err.str());
         }
 
-        return proxy;
+        return isProxy;
     }
 
     void DatabaseClient::update_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd) {
@@ -558,7 +579,8 @@ namespace app {
 
             // Add card(s) to the database
             for (const auto& c : cards) {
-                app.globalDBClient.add_new_card(conn, c);
+                cardDetails cardFace = c;
+                app.globalDBClient.add_new_card(conn, cardFace);
             }
         } else {
             cards.emplace_back(card);
