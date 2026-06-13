@@ -608,9 +608,9 @@ namespace app {
         } else if (cardJson["type"] == "CardImageDownload") {
             // need to do some work on this function
             // download_card_image();
+        } else {
+            utils::log_error("Unkown task type");
         }
-
-        
     }
 
 }
