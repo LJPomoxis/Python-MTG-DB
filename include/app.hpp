@@ -119,11 +119,16 @@ namespace app {
     std::optional<std::vector<json>> extract_faces(const json &scryfallData);
     cardDetails process_faces(const cardDetails &inCard, const json &faceData);
     std::vector<cardDetails> process_card_json(const std::string &scryfallResults);
+    
     void download_card_image(const cardDetails &card, const std::string &scryfallResults, const cpr::Header &headers);
     void download_file(const std::string &fileEnpoint, const std::string &fileName, const cpr::Header &headers);
+    
     DatabaseConfig config_db_conn(const std::string &envFilePath, int iMaxSize);
+    
     void batch_tasks(std::vector<json> &jsonList, sw::redis::Redis &redis, int batchSize); // task manager for watching redis and batching tasks taken from redis queue
     void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
+    
+    void deck_card_add(AppContext &app, const json &cardJson, std::unique_ptr<sql::Connection> &conn);
     void worker_thread(AppContext &app, const json &cardJson); // thread logic
 
 }

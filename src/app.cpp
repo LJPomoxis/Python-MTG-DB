@@ -419,7 +419,8 @@ namespace app {
         return cards;
     }
 
-    // Currently doesn't download both sides of DFC, only requested side
+    // Currently doesn't download both sides of DFC, only front side
+    // need to compare names of both faces to determine which side is being downloaded
     void download_card_image(const cardDetails &card, const std::string &scryfallResults, const cpr::Header &headers) {
         // Parse query result into json
         json scryfallData = json::parse(scryfallResults);
@@ -524,13 +525,7 @@ namespace app {
         }
     }
 
-    // Needs to account for multiple card inside of cards vector
-    // Currently broken due to the fact that card is passed to functions and then not used
-    void worker_thread(AppContext &app, const json &cardJson) {
-        // get connection
-        std::unique_ptr<sql::Connection> conn(app.get_connection());
-        conn->setAutoCommit(false);
-
+    void deck_card_add(AppContext &app, const json &cardJson, std::unique_ptr<sql::Connection> &conn) {
         // Set deck name
         int deckID;
         std::string deckName;
@@ -594,6 +589,28 @@ namespace app {
         bool isProxy = app.globalDBClient.update_collection(conn, cards[0].collectionID, cards[0].quantity);
         DeckDetails dd = {deckID, cards[0].collectionID, cards[0].quantity, isProxy, isCommander};
         app.globalDBClient.update_decklist(conn, dd);
+    }
+
+    // Needs to account for multiple card inside of cards vector
+    // Currently broken due to the fact that card is passed to functions and then not used
+    void worker_thread(AppContext &app, const json &cardJson) {
+        // get connection
+        std::unique_ptr<sql::Connection> conn(app.get_connection());
+        conn->setAutoCommit(false);
+
+        if (!cardJson.contains("type")) {
+            utils::log_error("Task missing type identifier");
+            return;
+        }
+
+        if (cardJson["type"] == "deckCardAdd") {
+            deck_card_add(app, cardJson, conn);
+        } else if (cardJson["type"] == "CardImageDownload") {
+            // need to do some work on this function
+            // download_card_image();
+        }
+
+        
     }
 
 }
