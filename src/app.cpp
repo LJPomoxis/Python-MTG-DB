@@ -284,6 +284,7 @@ namespace app {
             stmnt->setInt(2, dd.collectionID);
             stmnt->setInt(3, dd.numberInDeck);
             stmnt->setBoolean(4, dd.isProxy);
+            stmnt->setBoolean(5, dd.isCommander);
 
             stmnt->execute();
             conn->commit();
@@ -589,8 +590,9 @@ namespace app {
         // Update existing fields
         // Using cards[0] because we only want to add front of DFC to decklist, not both sides
         cards[0].quantity = cardJson["quantity"].get<int>();
+        bool isCommander = cardJson["isCommander"].get<bool>();
         bool isProxy = app.globalDBClient.update_collection(conn, cards[0].collectionID, cards[0].quantity);
-        DeckDetails dd = {deckID, cards[0].collectionID, cards[0].quantity, isProxy};
+        DeckDetails dd = {deckID, cards[0].collectionID, cards[0].quantity, isProxy, isCommander};
         app.globalDBClient.update_decklist(conn, dd);
     }
 

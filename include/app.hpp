@@ -43,6 +43,7 @@ namespace app {
         int collectionID;
         int numberInDeck;
         bool isProxy;
+        bool isCommander;
     };
 
     class DatabaseClient {
