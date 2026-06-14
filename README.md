@@ -6,7 +6,7 @@ A custom, self-hosted web application for tracking your Magic: The Gathering car
 
 - Searching: Searches based off of the card name with pagination allow for easy searching of your collection for the card you want.
 
-- Card Views: With card art courtesy of Scryfall, the card view shows you the specifics of the card as well as.
+- Card Views: With card art courtesy of Scryfall, the card view shows you the specifics of the card as well as different versions of the card.
 
 - Inventory Management: Easily track and manage different printings of the same card and their quantities with the simple UI.
 
