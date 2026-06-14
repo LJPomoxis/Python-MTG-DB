@@ -57,6 +57,7 @@ namespace app {
         int get_colorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString colorName);
         int get_typeID(std::unique_ptr<sql::Connection> &conn, sql::SQLString type);
         int get_keywordID(std::unique_ptr<sql::Connection> &conn, sql::SQLString keyword);
+        int get_oracleID(std::unique_ptr<sql::Connection> &conn, sql::SQLString oracle);
         int get_flavorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString flavor);
         int get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID);
         int get_deckID(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
