@@ -191,7 +191,7 @@ def add_cardFlavor(card, cursor):
         flavorID = get_cardFlavorID(card['flavor'], cursor)
     
         cursor.execute("""
-            INSERT IGNORE INTO CardFlavor (cardID, setID, flavorID)
+            INSERT INTO CardFlavor (cardID, setID, flavorID)
             VALUES (%s,%s,%s)
         """, (card['ID'], card['setID'], flavorID))
 
