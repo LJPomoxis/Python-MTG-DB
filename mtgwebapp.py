@@ -312,7 +312,7 @@ def card_details(cardID, setID):
         SELECT Tl.type
         FROM CardType Ct
         INNER JOIN TypeLookup Tl
-        ON Ct.cardTypeNumber = Tl.cardTypeNumber
+        ON Ct.cardTypeID = Tl.cardTypeID
         WHERE Ct.cardID = (%s)
     """, (cardID, ))
     response = cursor.fetchall()

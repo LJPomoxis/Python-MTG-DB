@@ -238,17 +238,17 @@ def add_cardImage(card, cursor):
 def add_cardType(card, cursor):
 
     for type in card['types']:
-        typeNumber = get_cardTypeNumber(type, cursor)
+        typeID = get_cardTypeID(type, cursor)
         cursor.execute("""
-            INSERT INTO CardType (cardID, cardTypeNumber)
+            INSERT INTO CardType (cardID, cardTypeID)
             VALUES (%s,%s)
-        """, (card['ID'], typeNumber))
+        """, (card['ID'], typeID))
 
-def get_cardTypeNumber(type, cursor):
+def get_cardTypeID(type, cursor):
     cursor.execute("""
         INSERT INTO TypeLookup (type)
         VALUES (%s)
-        ON DUPLICATE KEY UPDATE cardTypeNumber = LAST_INSERT_ID(cardTypeNumber)
+        ON DUPLICATE KEY UPDATE cardTypeID = VALUE(cardTypeID)
     """, (type, ))
 
     cursor.execute("SELECT LAST_INSERT_ID()")
