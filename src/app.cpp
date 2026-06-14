@@ -42,27 +42,173 @@ namespace app {
         return setID;
     }
 
-    //
-    int DatabaseClient::get_colorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString colorName) {
+    int DatabaseClient::get_dfcID(std::unique_ptr<sql::Connection> &conn) {
+        int dfcID = 0;
 
-        return 0;
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "SELECT dfcID FROM MultiFaceCards ORDER BY dfcID desc LIMIT 2"
+        ));
+
+        std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
+
+        int dfcLower = 0;
+        int dfcUpper = 0;
+        if (res->next()) {
+            dfcLower = res->getInt(1);
+        }
+
+        if (res->next()) {
+            dfcUpper = res->getInt(1);
+        }
+
+        if (dfcLower == dfcUpper) {
+            dfcID = dfcUpper + 1;
+        } else {
+            dfcID = dfcUpper;
+        }
+
+        return dfcID;
+    }
+
+    int DatabaseClient::get_colorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString colorName) {
+        int colorID = 0;
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "SELECT colorID FROM ColorLookup WHERE colorName LIKE ?"
+        ));
+
+        stmnt->setString(1, colorName);
+        std::unique_ptr<sql::ResultSet> res(stmnt->executeQuery());
+
+        if (res->next()) {
+            colorID = res->getInt(1);
+        }
+
+        return colorID;
     }
     
-    int DatabaseClient::get_typeNumber(std::unique_ptr<sql::Connection> &conn, sql::SQLString type) {
+    int DatabaseClient::get_typeID(std::unique_ptr<sql::Connection> &conn, sql::SQLString type) {
+        int typeID = 0;
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO TypeLookup (type) VALUES (?)"
+            "ON DUPLICATE KEY UPDATE type = VALUE(type)"
+        ));
 
-        return 0;
+        try {
+            stmnt->setString(1, type);
+            stmnt->executeUpdate();
+            conn->commit();
+
+            std::unique_ptr<sql::Statement> idstmnt(conn->createStatement());
+            std::unique_ptr<sql::ResultSet> res(idstmnt->executeQuery("SELECT LAST_INSERT_ID()"));
+
+            if (res->next()) {
+                typeID = res->getInt(1);
+            } else {
+                //throw error?
+            }
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error getting typeID: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return typeID;
     }
 
-    int DatabaseClient::get_keywordNumber(std::unique_ptr<sql::Connection> &conn, sql::SQLString keyword) {
+    int DatabaseClient::get_keywordID(std::unique_ptr<sql::Connection> &conn, sql::SQLString keyword) {
+        int keywordID = 0;
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO KeywordLookup (keyword) VALUES (?)"
+            "ON DUPLICATE KEY UPDATE keyword = VALUE(keyword)"
+        ));
 
-        return 0;
+        try {
+            stmnt->setString(1, keyword);
+            stmnt->executeUpdate();
+            conn->commit();
+
+            std::unique_ptr<sql::Statement> idStmnt(conn->createStatement());
+            std::unique_ptr<sql::ResultSet> res(idStmnt->executeQuery("SELECT LAST_INSERT_ID()"));
+
+            if (res->next()) {
+                // maybe should be getInt64?
+                keywordID = res->getInt(1);
+            } else {
+                // throw error?
+            }
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error getting keywordID: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return keywordID;
+    }
+
+    int DatabaseClient::get_oracleID(std::unique_ptr<sql::Connection> &conn, sql::SQLString oracle) {
+        int oracleID = 0;
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO OracleLookup (oracle) VALUES (?)"
+            "ON DUPLICATE KEY UPDATE oracle = VALUE(oracle)"
+        ));
+
+        try {
+            stmnt->setString(1, oracle);
+            stmnt->executeUpdate();
+            conn->commit();
+
+            std::unique_ptr<sql::Statement> idstmnt(conn->createStatement());
+            std::unique_ptr<sql::ResultSet> res(idstmnt->executeQuery("SELECT LAST_INSERT_ID()"));
+
+            if (res->next()) {
+                oracleID = res->getInt(1);
+            } else {
+                //throw error?
+            }
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error getting oracleID: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return oracleID;
     }
 
     int DatabaseClient::get_flavorID(std::unique_ptr<sql::Connection> &conn, sql::SQLString flavor) {
+        int flavorID = 0;
 
-        return 0;
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO FlavorLookup (flavor) VALUES (?)"
+            "ON DUPLICATE KEY UPDATE flavor = VALUE(flavor)"
+        ));
+
+        try {
+            stmnt->setString(1, flavor);
+            stmnt->executeUpdate();
+            conn->commit();
+
+            std::unique_ptr<sql::Statement> idstmnt(conn->createStatement());
+            std::unique_ptr<sql::ResultSet> res(idstmnt->executeQuery("SELECT LAST_INSERT_ID()"));
+
+            if (res->next()) {
+                flavorID = res->getInt(1);
+            } else {
+                //throw error?
+            }
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error getting flavorID: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return flavorID;
     }
-    //
 
     int DatabaseClient::get_collectionID(std::unique_ptr<sql::Connection> &conn, int setID, int cardID) {
         // Uses setID and cardID to check Collection table for entry
@@ -100,7 +246,7 @@ namespace app {
     }
 
     int DatabaseClient::create_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName, sql::SQLString cleanCardName) {
-        // default value, if returned as 0 error has occured
+        // default value, if returned as 0 error has occured/DNE
         int generatedCardID = 0;
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
            "INSERT INTO CardAttributes (cardName, cleanCardName) VALUES (?, ?)" 
@@ -111,7 +257,9 @@ namespace app {
             stmnt->setString(2, cleanCardName);
 
             stmnt->executeUpdate();
-            std::shared_ptr<sql::ResultSet> res(stmnt->getGeneratedKeys());
+            
+            std::unique_ptr<sql::Statement> idstmnt(conn->createStatement());
+            std::unique_ptr<sql::ResultSet> res(idstmnt->executeQuery("SELECT LAST_INSERT_ID()"));
 
             if (res->next()) {
                 generatedCardID = res->getInt(1);
@@ -122,6 +270,7 @@ namespace app {
                 utils::log_error(error);
             }
 
+            conn->commit();
         } catch (sql::SQLException &e) {
             conn->rollback();
             std::ostringstream err;
@@ -132,43 +281,216 @@ namespace app {
         return generatedCardID;
     }
 
-    //
     void DatabaseClient::add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+        
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardKeywords (cardID, keywordID) VALUES (?, ?)"
+        ));
 
+        try {
+
+            int keywordID = 0;
+            for (const auto& keyword : card.keywords) {
+                keywordID = get_keywordID(conn, keyword);
+                stmnt->setInt(1, card.ID);
+                stmnt->setInt(2, keywordID);
+                stmnt->addBatch();
+            }
+
+            stmnt->executeBatch();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding keywords: " << e.what();
+            utils::log_error(err.str());
+        }
     }
 
     void DatabaseClient::add_types(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardType (cardID, cardTypeID) VALUES (?)"
+        ));
+
+        try {
+
+            int typeID = 0;
+            for (const auto& type : card.types) {
+                typeID = get_typeID(conn, type);
+                stmnt->setInt(1, card.ID);
+                stmnt->setInt(1, typeID);
+                stmnt->addBatch();
+            }
+
+            stmnt->executeBatch();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding types: " << e.what();
+            utils::log_error(err.str()); 
+        }
 
     }
 
     void DatabaseClient::add_dfcID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO MultiFaceCards (cardID, dfcID) VALUES (?, ?)"
+        ));
+
+        try {
+            int dfcID = get_dfcID(conn);
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, dfcID);
+
+            stmnt->executeUpdate();
+            conn->commit();
+
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding dfcID: " << e.what();
+            utils::log_error(err.str()); 
+        }
+
     }
 
     void DatabaseClient::add_card_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardColors (cardID, colorID, colorIdentityID) VALUE (?, ?)"
+        ));
+
+        try {
+            int colorID = get_colorID(conn, card.colors);
+            int colorIdentityID = get_colorID(conn, card.colorIdentity);
+
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, colorID);
+            stmnt->setInt(3, colorIdentityID);
+            stmnt->executeUpdate();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card colors: " << e.what();
+            utils::log_error(err.str());
+        }
 
     }
 
     void DatabaseClient::add_card_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardOracle (cardID, oracleID) VALUES (?, ?)"
+        ));
+
+        try {
+            int oracleID = get_oracleID(conn, card.oracle);
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, oracleID);
+            
+            stmnt->executeUpdate();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card oracle: " << e.what();
+            utils::log_error(err.str());
+        }
+
     }
 
     void DatabaseClient::add_card_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardFlavor (cardID, setID, flavorID) VALUES (?, ?, ?)"
+        ));
+
+        try {
+            int flavorID = get_flavorID(conn, card.flavor);
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, card.setID);
+            stmnt->setInt(3, flavorID);
+
+            stmnt->executeUpdate();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card flavor: " << e.what();
+            utils::log_error(err.str());
+        }
+
     }
 
-    void DatabaseClient::add_card_mana(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_card_manaVal(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardManaValue (cardID, manaValue, hasXinCost, stringManaValue) VALUES (?, ?, ?, ?)"
+        ));
+
+        try {
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, card.manaValue);
+            stmnt->setBoolean(3, card.hasXinCost);
+            stmnt->setString(4, card.displayManaValue);
+
+            stmnt->executeUpdate();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card mana info: " << e.what();
+            utils::log_error(err.str());
+        }
 
     }
 
     void DatabaseClient::add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardPT (cardID, power, toughness) VALUES (?, ?, ?)"
+        ));
+
+        try {
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, card.power);
+            stmnt->setInt(3, card.toughness);
+
+            stmnt->executeUpdate();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card P/T: " << e.what();
+            utils::log_error(err.str());
+        }
     }
 
     void DatabaseClient::add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO CardImage (cardID, setID, imageUrl, bigImageUrl) VALUES (?, ?, ?, ?)"
+        ));
+
+        try {
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, card.setID);
+            stmnt->setString(3, card.smallUri);
+            stmnt->setString(4, card.normalUri);
+
+            stmnt->executeUpdate();
+            conn->commit();
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error adding card images: " << e.what();
+            utils::log_error(err.str());
+        }
     }
-    //
 
     void DatabaseClient::add_new_card(std::unique_ptr<sql::Connection> &conn, cardDetails &card) {
         // create cardID
@@ -606,7 +928,7 @@ namespace app {
         if (cardJson["type"] == "deckCardAdd") {
             deck_card_add(app, cardJson, conn);
         } else if (cardJson["type"] == "CardImageDownload") {
-            // need to do some work on this function
+            // need to do some work on this function based on new reformatting of worker thread function
             // download_card_image();
         } else {
             utils::log_error("Unkown task type");
