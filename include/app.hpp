@@ -69,7 +69,7 @@ namespace app {
         void add_card_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_card_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_card_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_mana(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_card_manaVal(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
 
