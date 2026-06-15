@@ -249,7 +249,10 @@ namespace app {
         // default value, if returned as 0 error has occured/DNE
         int generatedCardID = 0;
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
-           "INSERT INTO CardAttributes (cardName, cleanCardName) VALUES (?, ?)" 
+           "INSERT INTO CardAttributes (cardName, cleanCardName) VALUES (?, ?)"
+           "ON DUPLICATE KEY UPDATE"
+           "cardName = VALUE(cardName)"
+           "cleanCardName = VALUE(cleanCardName)"
         ));
 
         try {
@@ -263,8 +266,6 @@ namespace app {
 
             if (res->next()) {
                 generatedCardID = res->getInt(1);
-                std::string message = "Succesfully created: " + std::string(cardName);
-                utils::log_info(message);
             } else {
                 std::string error = "Error creating: " + std::string(cardName);
                 utils::log_error(error);
