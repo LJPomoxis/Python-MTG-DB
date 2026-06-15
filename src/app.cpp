@@ -282,6 +282,39 @@ namespace app {
         return generatedCardID;
     }
 
+    int DatabaseClient::create_collectionID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+        int collectionID = 0;
+
+        std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
+            "INSERT INTO Collection (cardID, setID, quantity) VALUES (?, ?, ?)"
+        ));
+
+        try {
+            stmnt->setInt(1, card.ID);
+            stmnt->setInt(2, card.setID);
+            stmnt->setInt(3, card.quantity);
+
+            stmnt->executeUpdate();
+            conn->commit();
+
+            std::unique_ptr<sql::Statement> idstmnt(conn->createStatement());
+            std::unique_ptr<sql::ResultSet> res(idstmnt->executeQuery("SELECT LAST_INSERT_ID()"));
+
+            if (res->next()) {
+                collectionID = res->getInt(1);
+            } else {
+                //throw error?
+            }
+        } catch (sql::SQLException &e) {
+            conn->rollback();
+            std::ostringstream err;
+            err << "Error creating collection entry: " << e.what();
+            utils::log_error(err.str());
+        }
+
+        return collectionID;
+    }
+
     void DatabaseClient::add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
         
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
@@ -358,7 +391,7 @@ namespace app {
 
     }
 
-    void DatabaseClient::add_card_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "INSERT INTO CardColors (cardID, colorID, colorIdentityID) VALUE (?, ?)"
@@ -382,7 +415,7 @@ namespace app {
 
     }
 
-    void DatabaseClient::add_card_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "INSERT INTO CardOracle (cardID, oracleID) VALUES (?, ?)"
@@ -404,7 +437,7 @@ namespace app {
 
     }
 
-    void DatabaseClient::add_card_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "INSERT INTO CardFlavor (cardID, setID, flavorID) VALUES (?, ?, ?)"
@@ -427,7 +460,7 @@ namespace app {
 
     }
 
-    void DatabaseClient::add_card_manaVal(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_manaVal(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "INSERT INTO CardManaValue (cardID, manaValue, hasXinCost, stringManaValue) VALUES (?, ?, ?, ?)"
@@ -450,7 +483,7 @@ namespace app {
 
     }
 
-    void DatabaseClient::add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "INSERT INTO CardPT (cardID, power, toughness) VALUES (?, ?, ?)"
@@ -471,7 +504,7 @@ namespace app {
         }
     }
 
-    void DatabaseClient::add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
+    void DatabaseClient::add_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card) {
 
         std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
             "INSERT INTO CardImage (cardID, setID, imageUrl, bigImageUrl) VALUES (?, ?, ?, ?)"
@@ -494,47 +527,31 @@ namespace app {
     }
 
     void DatabaseClient::add_new_card(std::unique_ptr<sql::Connection> &conn, cardDetails &card) {
-        // create cardID
         card.ID = create_cardID(conn, card.name, card.cleanName);
-        
-        // get setID from setCode
         card.setID = get_setID(conn, card.setCode);
 
-        // create collectionID
-            // add to collection cardID + setID + quantity
-                // for multi-use function, check if cardID + setID exists
-                // Then query quantity, add new quantity and update record
+        int collectionID = get_collectionID(conn, card.setID, card.ID);
+        if (!collectionID) {
+            collectionID = create_collectionID(conn, card);
+        }
+        
+        add_keywords(conn, card);
+        add_types(conn, card);
 
-        // add keywords
-            // use KeywordLookup and CardKeywords tables
+        if (card.isDFC) {
+            add_dfcID(conn, card);
+        }
 
-        // add types
-            // use TypeLookup and CardTypes tables
-
-        // add dfcID (check if card is DFC, should be card.isDFC)
-            // add cardID to dfc table
-
-        // add card colors
-            // get colorID from ColorLookup using color name (string; i.e. boros)
-            // add to CardColors cardID + colorID + colorIdentityID (find colorID for color and color identity)
-
-        // add card oracle (check if oracle contains more than whitespace)
-            // check if oracle for cardID exists, if so skip
-
-        // add card flavor (check if flavor contains more than whitespace)
-            // check FlavorLookup table for flavor string (exact string)
-            // If exists, get flavorID and add it to CardFlavor w/ cardID + setID + flavorID
-
-        // add card mana value
-            // add to CardManaValue cardID + manaValue + hasXinCost + stringManaValue
-
-        // add card P/T (Check if P/T are populated)
-            // add to CardPT cardID + power + toughness
-
-        // add card image (image uris)
-            // add to CardImage cardID + setID + imageUrl + bigImageUrl
-            // (imageUrl = small, bigImageUrl = normal)
-
+        add_colors(conn, card);
+        add_oracle(conn, card);
+        add_flavor(conn, card);
+        add_manaVal(conn, card);
+        
+        if (card.isCreature) {
+            add_PT(conn, card);
+        }
+        
+        add_image(conn, card);
     }
 
     void DatabaseClient::name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName) {
@@ -909,13 +926,14 @@ namespace app {
         // Using cards[0] because we only want to add front of DFC to decklist, not both sides
         cards[0].quantity = cardJson["quantity"].get<int>();
         bool isCommander = cardJson["isCommander"].get<bool>();
+        // update_collection function should take both cards
+        // necessary because even though we only add front side of dfc,
+        // we still need to decrement the collection quantity of the other face of the dfc
         bool isProxy = app.globalDBClient.update_collection(conn, cards[0].collectionID, cards[0].quantity);
         DeckDetails dd = {deckID, cards[0].collectionID, cards[0].quantity, isProxy, isCommander};
         app.globalDBClient.update_decklist(conn, dd);
     }
 
-    // Needs to account for multiple card inside of cards vector
-    // Currently broken due to the fact that card is passed to functions and then not used
     void worker_thread(AppContext &app, const json &cardJson) {
         // get connection
         std::unique_ptr<sql::Connection> conn(app.get_connection());
