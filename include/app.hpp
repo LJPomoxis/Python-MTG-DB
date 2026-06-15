@@ -67,12 +67,12 @@ namespace app {
         void add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_types(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_dfcID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_manaVal(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
-        void add_card_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_colors(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_oracle(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_flavor(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_manaVal(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_PT(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
+        void add_image(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
 
         void add_new_card(std::unique_ptr<sql::Connection> &conn, cardDetails &card);
         void name_deck(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
