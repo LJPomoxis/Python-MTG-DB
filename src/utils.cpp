@@ -102,6 +102,17 @@ namespace utils {
         while(input >> keyword) {
             outputSet.insert(keyword);
         }
+
+        // Since the string stream will capture any character set we need to search for em dashes
+        // and other non-type character sets
+        for (auto it = outputSet.begin(); it != outputSet.end(); ) {
+            if (*it == "//" || *it == "—") {
+                it = outputSet.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
         return outputSet;
     }
 
