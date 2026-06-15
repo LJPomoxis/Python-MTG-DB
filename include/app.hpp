@@ -63,6 +63,7 @@ namespace app {
         int get_deckID(std::unique_ptr<sql::Connection> &conn, sql::SQLString deckName);
         
         int create_cardID(std::unique_ptr<sql::Connection> &conn, sql::SQLString cardName, sql::SQLString cleanCardName);
+        int create_collectionID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_keywords(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_types(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
         void add_dfcID(std::unique_ptr<sql::Connection> &conn, const cardDetails &card);
