@@ -926,10 +926,12 @@ namespace app {
         // Using cards[0] because we only want to add front of DFC to decklist, not both sides
         cards[0].quantity = cardJson["quantity"].get<int>();
         bool isCommander = cardJson["isCommander"].get<bool>();
-        // update_collection function should take both cards
-        // necessary because even though we only add front side of dfc,
-        // we still need to decrement the collection quantity of the other face of the dfc
         bool isProxy = app.globalDBClient.update_collection(conn, cards[0].collectionID, cards[0].quantity);
+        
+        //checks if dfc, if true update the entry for the backside in addition to the front
+        if (cards.size() > 1) {
+            app.globalDBClient.update_collection(conn, cards[1].collectionID, cards[1].quantity);
+        }
         DeckDetails dd = {deckID, cards[0].collectionID, cards[0].quantity, isProxy, isCommander};
         app.globalDBClient.update_decklist(conn, dd);
     }
