@@ -947,6 +947,8 @@ namespace app {
         std::unique_ptr<sql::Connection> conn(app.get_connection());
         conn->setAutoCommit(false);
 
+        //std::cout << cardJson;
+
         if (!cardJson.contains("type")) {
             utils::log_error("Task missing type identifier");
             return;
