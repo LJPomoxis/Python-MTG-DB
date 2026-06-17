@@ -617,7 +617,7 @@ namespace app {
     void DatabaseClient::update_decklist(std::unique_ptr<sql::Connection> &conn, DeckDetails dd) {
         try {
             std::shared_ptr<sql::PreparedStatement> stmnt(conn->prepareStatement(
-                "INSERT INTO Decks (deckID, collectionID, numberInDeck, isProxy) VALUES (?, ?, ?, ?)"
+                "INSERT INTO Decks (deckID, collectionID, numberInDeck, isProxy, isCommander) VALUES (?, ?, ?, ?, ?)"
             ));
 
             stmnt->setInt(1, dd.deckID);
