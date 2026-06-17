@@ -872,6 +872,7 @@ namespace app {
         if (cardJson.contains("deckName")) {
             deckName = cardJson["deckName"];
             app.globalDBClient.name_deck(conn, deckName);
+            return; // Maybe not the cleanest exit, fix later?
         } else {
             deckName = cardJson["dName"];
             deckID = app.globalDBClient.get_deckID(conn, deckName);
@@ -942,6 +943,10 @@ namespace app {
         app.globalDBClient.update_decklist(conn, dd);
     }
 
+    void delete_deck(AppContext &app, const json &cardJson, std::unique_ptr<sql::Connection> &conn) {
+
+    }
+
     void worker_thread(AppContext &app, const json &cardJson) {
         // get connection
         std::unique_ptr<sql::Connection> conn(app.get_connection());
@@ -954,6 +959,8 @@ namespace app {
 
         if (cardJson["type"] == "deckCardAdd") {
             deck_card_add(app, cardJson, conn);
+        } else if (cardJson["type"] == "deckDelete") {
+
         } else if (cardJson["type"] == "CardImageDownload") {
             // need to do some work on this function based on new reformatting of worker thread function
             // download_card_image();

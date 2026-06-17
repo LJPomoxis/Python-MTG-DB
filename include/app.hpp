@@ -132,6 +132,7 @@ namespace app {
     void app_loop(AppContext &app); // Main program loop, keeps redis db in context for entire program
     
     void deck_card_add(AppContext &app, const json &cardJson, std::unique_ptr<sql::Connection> &conn);
+    void delete_deck(AppContext &app, const json &cardJson, std::unique_ptr<sql::Connection> &conn);
     void worker_thread(AppContext &app, const json &cardJson); // thread logic
 
 }
