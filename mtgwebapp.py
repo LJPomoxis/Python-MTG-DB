@@ -514,8 +514,7 @@ def new_deck():
         # So this will pull that from the list and immediately push it to the CPP program
         firstLine = lines.pop(0)
         nameParts = [x.strip() for x in firstLine.split(':')]
-        deckName = {}
-        deckName["deckName"] = nameParts[1]
+        deckName = {"type": "deckCardAdd", "deckName": nameParts[1]}
         push_task_to_cpp(deckName)
 
         commanderCheck = False
@@ -537,6 +536,7 @@ def new_deck():
                 commanderCheck = False
             dCard['name'] = re.sub(r'[^a-z0-9\s]', '', dCard['name'].lower())
             dCard['url'] = build_card_query(dCard['name'], dCard['set'])
+            dCard["quantity"] = int(dCard["quantity"])
             push_task_to_cpp(dCard)
             # logging.debug(dCard)
             cards.append(dCard)
