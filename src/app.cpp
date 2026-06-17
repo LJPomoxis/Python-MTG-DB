@@ -759,8 +759,8 @@ namespace app {
         return cards;
     }
 
-    // Currently doesn't download both sides of DFC, only front side
-    // need to compare names of both faces to determine which side is being downloaded
+    // This function works properly under the assumption both faces of any give DFC are passed
+    // as separate cards which is correct following the design of the database
     void download_card_image(const cardDetails &card, const std::string &scryfallResults, const cpr::Header &headers) {
         // Parse query result into json
         json scryfallData = json::parse(scryfallResults);
@@ -875,6 +875,12 @@ namespace app {
         } else {
             deckName = cardJson["dName"];
             deckID = app.globalDBClient.get_deckID(conn, deckName);
+        }
+
+        if (deckID == 0) {
+            utils::log_error("Deck does not exist");
+            // This should eventually be handled more cleanly than returning
+            return;
         }
 
         // Check DB for card
