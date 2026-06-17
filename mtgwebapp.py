@@ -58,7 +58,11 @@ IMAGE_DISPLAY_PATH = "images/cards/"
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
 
 MANA_PATTERN = re.compile(r"\{([^}]+)\}")
-BULK_CARD_PATTERN = re.compile(r"^(.+?)(?:\s+([A-Z]{3,4}))?(?:\s+x?(\d+))?(?:\s+(\*))?$")
+# Old version based on custom formatting
+# BULK_CARD_PATTERN = re.compile(r"^(.+?)(?:\s+([A-Z]{3,4}))?(?:\s+x?(\d+))?(?:\s+(\*))?$")
+# New version based on more standardized formatting
+BULK_CARD_PATTERN = re.compile(r"^(\d+)\s+(.+?)\s+\(([A-Z]{3,4})\)(?:\s+(\d+))?\s*$")
+
 
 app.config['DB_HOST'] = os.getenv('DB_HOST')
 app.config['DB_USER'] = os.getenv('DB_USER')
@@ -508,21 +512,32 @@ def new_deck():
         # newdeck.html will automatically populate 'deckName: ' as the first line
         # So this will pull that from the list and immediately push it to the CPP program
         firstLine = lines.pop(0)
-        nameParts = [x.strip() for x in firstLine.split(':')]
+        nameParts = [x.strip() for x in firstLine.split(':')[1]]
         deckName = {}
-        deckName["deckName"] = nameParts[1]
+        deckName["deckName"] = nameParts[0]
         push_task_to_cpp(deckName)
 
-        keys = ['type', 'name', 'set', 'quantity', 'commander', 'dName']
+        commanderCheck = False
+        # Will error on empty list if '// COMMANDER' is excluded
+        while (not commanderCheck):
+            check = lines.pop(0)
+            if (check == "// COMMANDER"):
+                commanderCheck = True
+
+        keys = ['type', 'quantity', 'name', 'set', 'isCommander', 'dName']
         for line in lines:
             items = BULK_CARD_PATTERN.findall(line)
             card = ['deckCardAdd']
             card.extend(list(items[0]))
             card.append(deckName["deckName"])
             dCard = dict(zip(keys, card))
+            dCard["isCommander"] = commanderCheck
+            if (commanderCheck):
+                commanderCheck = False
             dCard['name'] = re.sub(r'[^a-z0-9\s]', '', dCard['name'].lower())
             dCard['url'] = build_card_query(dCard['name'], dCard['set'])
-            push_task_to_cpp(dCard)
+            # push_task_to_cpp(dCard)
+            logging.debug(dCard)
             cards.append(dCard)
 
         errors=cards
