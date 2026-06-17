@@ -276,12 +276,13 @@ def card_details(cardID, setID):
 
     # yikes, it works, but yikes
     cursor.execute("""
-        SELECT Ca.cardName, C.quantity, Sl.setName, Sl.setCode, Ci.bigImageUrl, Co.oracle, Fl.flavor, Cmv.stringManaValue , Cpt.power, Cpt.toughness
+        SELECT Ca.cardName, C.quantity, Sl.setName, Sl.setCode, Ci.bigImageUrl, Ol.oracle, Fl.flavor, Cmv.stringManaValue , Cpt.power, Cpt.toughness
         FROM Collection C
         LEFT JOIN CardAttributes Ca ON C.cardID = Ca.cardID
         LEFT JOIN SetLookup Sl ON C.setID = Sl.setID
         LEFT JOIN CardImage Ci ON C.cardID = Ci.cardID AND C.setID = Ci.setID
         LEFT JOIN CardOracle Co ON C.cardID = Co.cardID
+        LEFT JOIN OracleLookup Ol ON Co.oracleID = Ol.oracleID
         LEFT JOIN CardFlavor Cf ON C.cardID = Cf.cardID AND C.setID = Cf.setID
         LEFT JOIN FlavorLookup Fl ON Cf.flavorID = Fl.flavorID
         LEFT JOIN CardManaValue Cmv ON C.cardID = Cmv.cardID
@@ -512,9 +513,9 @@ def new_deck():
         # newdeck.html will automatically populate 'deckName: ' as the first line
         # So this will pull that from the list and immediately push it to the CPP program
         firstLine = lines.pop(0)
-        nameParts = [x.strip() for x in firstLine.split(':')[1]]
+        nameParts = [x.strip() for x in firstLine.split(':')]
         deckName = {}
-        deckName["deckName"] = nameParts[0]
+        deckName["deckName"] = nameParts[1]
         push_task_to_cpp(deckName)
 
         commanderCheck = False
@@ -536,8 +537,8 @@ def new_deck():
                 commanderCheck = False
             dCard['name'] = re.sub(r'[^a-z0-9\s]', '', dCard['name'].lower())
             dCard['url'] = build_card_query(dCard['name'], dCard['set'])
-            # push_task_to_cpp(dCard)
-            logging.debug(dCard)
+            push_task_to_cpp(dCard)
+            # logging.debug(dCard)
             cards.append(dCard)
 
         errors=cards
