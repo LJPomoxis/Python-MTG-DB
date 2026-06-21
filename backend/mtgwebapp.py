@@ -3,7 +3,6 @@ import os.path
 from flask import Flask, request, redirect, render_template, g
 from dotenv import load_dotenv
 import MySQLdb
-import random
 import logging
 import requests
 import re
