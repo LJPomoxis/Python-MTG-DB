@@ -5,9 +5,9 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
-ReadWritePaths=/var/www/mtgwebapp/static/images
-WorkingDirectory=/var/www/mtgwebapp
-ExecStart=/var/www/mtgwebapp/venv/bin/gunicorn --workers 3 --bind unix:/var/www/mtgwebapp/mtgwebapp.sock wsgi:application
+ReadWritePaths=/var/www/mtgwebapp/backend/static/images
+WorkingDirectory=/var/www/mtgwebapp/backend
+ExecStart=/var/www/mtgwebapp/backend/venv/bin/gunicorn --workers 3 --bind unix:/var/www/mtgwebapp/backend/mtgwebapp.sock wsgi:application
 
 [Install]
 WantedBy=multi-user.target
