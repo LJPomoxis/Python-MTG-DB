@@ -52,7 +52,7 @@ HEADER = {
     'Accept': 'application/json'
 }
 
-IMAGES_DIR_PATH = "/var/www/mtgwebapp/static/images/cards/"
+IMAGES_DIR_PATH = "/var/www/mtgwebapp/backend/static/images/cards/"
 IMAGE_DISPLAY_PATH = "images/cards/"
 
 NOT_DFC = ["normal", "meld", "class", "case", "mutate", "prototype", "saga"]
@@ -148,7 +148,6 @@ def home():
         image['url'] = IMAGE_DISPLAY_PATH + filename
         image['local'] = True
     else:
-        #background_file_download.delay(image['url'], filename, IMAGES_DIR_PATH, HEADER)
         fileDownload = {}
         fileDownload['type'] = "CardImageDownload"
         fileDownload['url'] = image['url']
