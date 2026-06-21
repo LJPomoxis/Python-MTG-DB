@@ -781,7 +781,7 @@ namespace app {
         }
 
         // Construct download file path
-        std::string imageDir = "/var/www/mtgwebapp/static/images/cards";
+        std::string imageDir = "/var/www/mtgwebapp/backend/static/images/cards";
         std::string ID = utils::i_to_str(card.ID);
         std::string setID = utils::i_to_str(card.setID);
         std::string fileName = imageDir + ID + "-" + setID + ".jpg";
