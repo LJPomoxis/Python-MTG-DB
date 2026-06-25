@@ -1,4 +1,4 @@
-#include "../include/app.hpp"
+#include "dal/app.hpp"
 
 int main() {
     app::AppConfig appCfg;

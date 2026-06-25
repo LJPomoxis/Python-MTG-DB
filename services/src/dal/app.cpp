@@ -1,6 +1,6 @@
-#include "../include/app.hpp"
-#include "../include/utils.hpp"
-#include "../include/requests.hpp"
+#include "dal/app.hpp"
+#include "common/utils.hpp"
+#include "dal/requests.hpp"
 #include <optional>
 
 namespace app {
