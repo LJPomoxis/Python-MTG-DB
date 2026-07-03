@@ -15,6 +15,7 @@ redis-plus-plus/
 build/
 .vscode/
 pyrightconfig.json
+language/
 
 # Ignore env files, sensitive credentials
 *.env
