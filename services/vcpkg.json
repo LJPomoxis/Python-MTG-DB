@@ -1,6 +1,6 @@
 {
   "name": "mtg-web-app",
-  "version-string": "0.1.0",
+  "version-string": "1.0.0",
   "builtin-baseline": "4b77da7fed37817f124936239197833469f1b9a8",
   "dependencies": [
     "fmt",
@@ -8,7 +8,9 @@
     "redis-plus-plus",
     "mariadb-connector-cpp",
     "curlpp",
-    "cpr"
+    "cpr",
+    "opencv",
+    "tesseract"
   ],
   "overrides": [
     {
