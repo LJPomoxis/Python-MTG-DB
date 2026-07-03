@@ -51,6 +51,5 @@ target_link_libraries(cardScanner PRIVATE
    Tesseract::libtesseract
    opencv_core
    opencv_imgproc
-   openvc_imgcodecs
-   opencv_highgui
+   opencv_imgcodecs
 )
