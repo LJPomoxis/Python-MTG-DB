@@ -4,6 +4,8 @@ project(MTGServices)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(VCPKG_INSTALL_OPTIONS "--clean-buildtrees-after-build" CACHE STRING "" FORCE)
+
 find_package(fmt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(redis++ CONFIG REQUIRED)
@@ -11,6 +13,8 @@ find_package(unofficial-mariadb-connector-cpp CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 find_package(unofficial-curlpp CONFIG REQUIRED)
 find_package(cpr CONFIG REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(Tesseract REQUIRED)
 
 add_library(CommonLib STATIC
     src/common/utils.cpp
@@ -36,10 +40,13 @@ target_link_libraries(DAL PRIVATE
     cpr::cpr
 )
 
-#add_executable(cardScanner
-#
-#)
+add_executable(cardScanner
+   src/cardscanner/main.cpp
+)
 
-#target_link_libraries(cardScanner PRIVATE
-#    CommonLib  
-#)
+target_link_libraries(cardScanner PRIVATE
+   CommonLib
+   nlohmann_json::nlohmann_json
+   redis++::redis++_static 
+   Tesseract::libtesseract
+)
