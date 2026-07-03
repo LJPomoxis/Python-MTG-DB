@@ -49,4 +49,8 @@ target_link_libraries(cardScanner PRIVATE
    nlohmann_json::nlohmann_json
    redis++::redis++_static 
    Tesseract::libtesseract
+   opencv_core
+   opencv_imgproc
+   openvc_imgcodecs
+   opencv_highgui
 )
