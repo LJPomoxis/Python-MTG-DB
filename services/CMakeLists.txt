@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(VCPKG_INSTALL_OPTIONS "--clean-buildtrees-after-build" CACHE STRING "" FORCE)
+set(TESSDATA_PREFIX "/var/www/mtgwebapp/language" CACHE PATH "Tesseract data directory")
+
 
 find_package(fmt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
