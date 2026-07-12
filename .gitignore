@@ -16,6 +16,7 @@ build/
 .vscode/
 pyrightconfig.json
 language/
+test/
 
 # Ignore env files, sensitive credentials
 *.env
